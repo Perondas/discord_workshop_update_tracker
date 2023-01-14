@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+  mysql:
+    image: mysql:latest
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: bot_db
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+  bot: 
+    build: bot
+    environment:
+      - MYSQL_URL=mysql://root:root@mysql/bot_db
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
