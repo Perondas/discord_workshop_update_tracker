@@ -14,5 +14,6 @@ pub async fn restart(ctx: Context<'_>) -> Result<(), Error> {
 
     ctx.data().scheduler.start_schedule(guild.id.0).await?;
 
+    ctx.say("Restarted tracking job.").await?;
     Ok(())
 }
