@@ -1,6 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use dashmap::DashMap;
+use itertools::Itertools;
 use mysql::Pool;
 use poise::serenity_prelude::{CacheAndHttp, GuildId};
 use tokio::{sync::RwLock, task::JoinHandle, time::sleep};
@@ -144,35 +145,11 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
             info!("No updates for guild: {}", guild_id);
         } else {
             info!("Found {} updates for guild: {}", updated.len(), guild_id);
-            c.send_message(&client, |d| {
-                d.content(format!("The following Items have been updated:"));
-
-                for (mod_info, _) in updated.iter() {
-                    if mod_info.preview_url.is_some() {
-                        d.add_embed(|e| {
-                            e.title(mod_info.name.clone());
-                            e.url(format!(
-                                "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                                mod_info.id
-                            ));
-                            e.image(mod_info.preview_url.clone().unwrap());
-                            e
-                        });
-                    } else {
-                        d.add_embed(|e| {
-                            e.title(mod_info.name.clone());
-                            e.url(format!(
-                                "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                                mod_info.id
-                            ));
-                            e
-                        });
-                    }
-                }
-
-                d
-            })
-            .await?;
+            if updated.len() > 5 {
+                send_in_chunks_updates(c, client, &updated).await?;
+            } else {
+                send_in_one_updates(c, client, &updated).await?;
+            }
 
             for (mod_info, _) in updated {
                 db::subscriptions::update_last_notify(
@@ -206,5 +183,95 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
         warn!("Client not set for scheduler");
     }
 
+    Ok(())
+}
+
+async fn send_in_chunks_updates(
+    c: &poise::serenity_prelude::GuildChannel,
+    client: &CacheAndHttp,
+    updated: &[(db::ModInfo, u64)],
+) -> Result<(), Error> {
+    let chunks: Vec<Vec<db::ModInfo>> = updated
+        .iter()
+        .chunks(5)
+        .into_iter()
+        .map(|c| c.map(|(m, _)| m.clone()).collect())
+        .collect();
+
+    let parts = chunks.len();
+
+    for (curr, chunk) in chunks.iter().enumerate() {
+        c.send_message(&client, |d| {
+            d.content(format!(
+                "The following Items have been updated: Part {}/{}",
+                curr + 1,
+                parts
+            ));
+
+            for mod_info in chunk.iter() {
+                if mod_info.preview_url.is_some() {
+                    d.add_embed(|e| {
+                        e.title(mod_info.name.clone());
+                        e.url(format!(
+                            "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
+                            mod_info.id
+                        ));
+                        e.image(mod_info.preview_url.clone().unwrap());
+                        e
+                    });
+                } else {
+                    d.add_embed(|e| {
+                        e.title(format!("{}, Id: {}", mod_info.name.clone(), mod_info.id));
+                        e.url(format!(
+                            "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
+                            mod_info.id
+                        ));
+                        e
+                    });
+                }
+            }
+
+            d
+        })
+        .await?;
+    }
+
+    Ok(())
+}
+
+async fn send_in_one_updates(
+    c: &poise::serenity_prelude::GuildChannel,
+    client: &Arc<CacheAndHttp>,
+    updated: &Vec<(db::ModInfo, u64)>,
+) -> Result<(), Error> {
+    c.send_message(&client, |d| {
+        d.content(format!("The following Items have been updated:"));
+
+        for (mod_info, _) in updated.iter() {
+            if mod_info.preview_url.is_some() {
+                d.add_embed(|e| {
+                    e.title(mod_info.name.clone());
+                    e.url(format!(
+                        "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
+                        mod_info.id
+                    ));
+                    e.image(mod_info.preview_url.clone().unwrap());
+                    e
+                });
+            } else {
+                d.add_embed(|e| {
+                    e.title(mod_info.name.clone());
+                    e.url(format!(
+                        "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
+                        mod_info.id
+                    ));
+                    e
+                });
+            }
+        }
+
+        d
+    })
+    .await?;
     Ok(())
 }
