@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 use crate::{db, Context, Error};
 
 /// List all the currently subscribed mods
@@ -13,18 +15,48 @@ pub async fn list_mods(ctx: Context<'_>) -> Result<(), Error> {
         return Ok(());
     }
 
-    let mods = subscriptions
-        .iter()
-        .map(|(_, info)| {
-            format!(
-                "\n{}: <https://steamcommunity.com/sharedfiles/filedetails/?id={}>",
-                info.name, info.id
-            )
-        })
-        .collect::<Vec<String>>()
-        .join(", ");
+    if subscriptions.len() > 10 {
+        let mods: Vec<String> = subscriptions
+            .iter()
+            .chunks(10)
+            .into_iter()
+            .map(|chunk| {
+                chunk
+                    .map(|(_, info)| {
+                        format!(
+                            "\n{}: <https://steamcommunity.com/sharedfiles/filedetails/?id={}>",
+                            info.name, info.id
+                        )
+                    })
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            })
+            .collect();
+        let parts = mods.len();
 
-    ctx.say(format!("Currently tracked mods: {}", mods)).await?;
+        for (i, part) in mods.iter().enumerate() {
+            ctx.say(format!(
+                "Currently tracked mods (part {} of {}): {}",
+                i + 1,
+                parts,
+                part
+            ))
+            .await?;
+        }
+    } else {
+        let mods = subscriptions
+            .iter()
+            .map(|(_, info)| {
+                format!(
+                    "\n{}: <https://steamcommunity.com/sharedfiles/filedetails/?id={}>",
+                    info.name, info.id
+                )
+            })
+            .collect::<Vec<String>>()
+            .join(", ");
+
+        ctx.say(format!("Currently tracked mods: {}", mods)).await?;
+    }
 
     Ok(())
 }
