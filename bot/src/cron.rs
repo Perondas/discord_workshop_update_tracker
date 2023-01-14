@@ -108,6 +108,7 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
 
         let mut updated = Vec::new();
         let mut unknown = Vec::new();
+        let mut failed = Vec::new();
 
         for (last_notify, mod_info) in subscriptions {
             let mod_info = steam::get_mod(scheduler.pool.clone(), mod_info.id).await?;
@@ -120,10 +121,12 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
         }
 
         for (last_notify, mod_info) in unknown {
-            let info = steam::get_latest_mod(scheduler.pool.clone(), mod_info.id).await?;
-
-            if info.last_updated > last_notify {
-                updated.push((info, last_notify));
+            if let Ok(info) = steam::get_latest_mod(scheduler.pool.clone(), mod_info.id).await {
+                if info.last_updated > last_notify {
+                    updated.push((info, last_notify));
+                }
+            } else {
+                failed.push((last_notify, mod_info));
             }
         }
 
@@ -139,7 +142,6 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
 
         if updated.is_empty() {
             info!("No updates for guild: {}", guild_id);
-            return Ok(());
         } else {
             info!("Found {} updates for guild: {}", updated.len(), guild_id);
             c.send_message(&client, |d| {
@@ -171,10 +173,34 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
                 d
             })
             .await?;
+
+            for (mod_info, _) in updated {
+                db::subscriptions::update_last_notify(
+                    scheduler.pool.clone(),
+                    guild_id,
+                    mod_info.id,
+                )?;
+            }
         }
 
-        for (mod_info, _) in updated {
-            db::subscriptions::update_last_notify(scheduler.pool.clone(), guild_id, mod_info.id)?;
+        if !failed.is_empty() {
+            c.send_message(&client, |d| {
+                d.content(format!("The following Items could not be updated:"));
+
+                for (_, mod_info) in failed.iter() {
+                    d.add_embed(|e| {
+                        e.title(format!("{}, Id: {}", mod_info.name.clone(), mod_info.id));
+                        e.url(format!(
+                            "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
+                            mod_info.id
+                        ));
+                        e
+                    });
+                }
+
+                d
+            })
+            .await?;
         }
     } else {
         warn!("Client not set for scheduler");
