@@ -5,16 +5,24 @@ use poise::serenity_prelude::Guild;
 
 use crate::Error;
 
-pub fn add_server(pool: Arc<Pool>, guild: &Guild) {
+pub fn add_server(pool: Arc<Pool>, guild: &Guild) -> Result<(), Error> {
     let mut conn = pool.get_conn().unwrap();
 
-    conn.exec_drop(
+    match conn.exec_drop(
         r"INSERT INTO Servers (ServerId) VALUES (:id);",
         params! {
             "id" => guild.id.0,
         },
-    )
-    .unwrap();
+    ) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            if e.to_string().contains("Duplicate entry") {
+                Ok(())
+            } else {
+                Err(e.into())
+            }
+        }
+    }
 }
 
 pub fn remove_server(pool: Arc<Pool>, guild_id: u64) {

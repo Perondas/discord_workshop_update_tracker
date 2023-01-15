@@ -79,7 +79,7 @@ async fn main() {
                     Event::GuildCreate { guild, is_new } => {
                         if *is_new {
                             debug!("New guild found: {}", guild.name);
-                            db::servers::add_server(state.pool.clone(), guild);
+                            db::servers::add_server(state.pool.clone(), guild)?;
                         }
                         Ok(())
                     }
