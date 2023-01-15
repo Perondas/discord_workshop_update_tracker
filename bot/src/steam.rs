@@ -16,11 +16,9 @@ use crate::{
 };
 
 pub async fn get_mod(pool: Arc<Pool>, mod_id: u64) -> Result<ModInfo, Error> {
-    if let Ok(mod_info) = db::mods::get_mod(pool.clone(), mod_id) {
-        if let Some(mod_info) = mod_info {
-            debug!("Found mod in db: {:?}", mod_info);
-            return Ok(mod_info);
-        }
+    if let Ok(Some(mod_info)) = db::mods::get_mod(pool.clone(), mod_id) {
+        debug!("Found mod in db: {:?}", mod_info);
+        return Ok(mod_info);
     }
     let mod_info = get_mod_from_steam(mod_id).await?;
 

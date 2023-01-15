@@ -134,7 +134,7 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
         let update_channel = db::servers::get_update_channel(scheduler.pool.clone(), guild_id)?
             .ok_or("No update channel set")?;
 
-        let id = GuildId { 0: guild_id };
+        let id = GuildId(guild_id);
         let g = id.to_partial_guild(&client.http).await?;
 
         let channels = g.channels(&client.http).await?;
@@ -162,7 +162,7 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
 
         if !failed.is_empty() {
             c.send_message(&client, |d| {
-                d.content(format!("The following Items could not be updated:"));
+                d.content("The following Items could not be updated:".to_string());
 
                 for (_, mod_info) in failed.iter() {
                     d.add_embed(|e| {
@@ -242,10 +242,10 @@ async fn send_in_chunks_updates(
 async fn send_in_one_updates(
     c: &poise::serenity_prelude::GuildChannel,
     client: &Arc<CacheAndHttp>,
-    updated: &Vec<(db::ModInfo, u64)>,
+    updated: &[(db::ModInfo, u64)],
 ) -> Result<(), Error> {
     c.send_message(&client, |d| {
-        d.content(format!("The following Items have been updated:"));
+        d.content("The following Items have been updated:".to_string());
 
         for (mod_info, _) in updated.iter() {
             if mod_info.preview_url.is_some() {

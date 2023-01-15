@@ -15,7 +15,7 @@ pub struct ModInfo {
 }
 
 pub fn get_pool(url: &str) -> Result<Pool, Error> {
-    let pool = Pool::new(Opts::from_url(&url)?)?;
+    let pool = Pool::new(Opts::from_url(url)?)?;
 
     Ok(pool)
 }
