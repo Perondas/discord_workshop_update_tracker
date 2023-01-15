@@ -1,5 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
+use commands::actions::add_multiple::mod_batch_add;
 use mysql::Pool;
 use poise::{
     builtins,
@@ -54,6 +55,7 @@ async fn main() {
         commands: vec![
             help(),
             mod_add(),
+            mod_batch_add(),
             mod_remove(),
             register_channel(),
             set_schedule(),
