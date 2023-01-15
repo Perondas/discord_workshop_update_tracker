@@ -9,6 +9,7 @@ services:
       MYSQL_DATABASE: bot_db
     volumes:
       - ./db:/docker-entrypoint-initdb.d
+      - botdbdata:/var/lib/mysql
     restart: 
       always
   bot: 
@@ -18,3 +19,6 @@ services:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
     restart: 
       always
+    
+volumes:
+  botdbdata:
