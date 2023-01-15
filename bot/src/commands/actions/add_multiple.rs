@@ -32,6 +32,8 @@ pub async fn mod_batch_add(
         return Ok(());
     }
 
+    ctx.say("Success").await?;
+
     let (_, c) = guild
         .channels
         .iter()
@@ -95,6 +97,5 @@ pub async fn mod_batch_add(
         continue;
     }
 
-    ctx.say("Success").await?;
     Ok(())
 }
