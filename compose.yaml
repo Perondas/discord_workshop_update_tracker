@@ -9,8 +9,12 @@ services:
       MYSQL_DATABASE: bot_db
     volumes:
       - ./db:/docker-entrypoint-initdb.d
+    restart: 
+      always
   bot: 
     build: bot
     environment:
       - MYSQL_URL=mysql://root:root@mysql/bot_db
       - DISCORD_TOKEN=${DISCORD_TOKEN}
+    restart: 
+      always
