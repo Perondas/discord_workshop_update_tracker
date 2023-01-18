@@ -8,7 +8,7 @@ use poise::{
     Event,
 };
 use tokio::time::sleep;
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
 use crate::commands::{
     actions::{add::mod_add, list::list_mods, remove::mod_remove, restart::restart},
@@ -44,12 +44,14 @@ async fn main() {
         match db::get_pool(&url) {
             Ok(p) => break p,
             Err(e) => {
-                debug!("Failed to connect to DB. Reason {:?}", e);
-                debug!("Trying again in 5 seconds");
+                info!("Failed to connect to DB. Reason {:?}", e);
+                info!("Trying again in 5 seconds");
                 sleep(Duration::from_secs(5)).await;
             }
         }
     };
+
+    info!("Connected to DB");
 
     let options = poise::FrameworkOptions {
         commands: vec![
@@ -142,6 +144,8 @@ async fn main() {
             }
         }
     });
+
+    info!("Starting bot");
 
     framework.start().await.unwrap();
 }

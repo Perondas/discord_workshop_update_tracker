@@ -38,7 +38,10 @@ impl Scheduler {
         let schedules = db::servers::get_all_schedules(self.pool.clone())?;
         let count = schedules.len();
 
-        info!("Starting {} cron jobs", count);
+        info!(
+            "Starting {} cron jobs",
+            schedules.iter().filter_map(|j| j.1).count()
+        );
 
         for (guild_id, schedule) in schedules {
             if let Some(hours) = schedule {

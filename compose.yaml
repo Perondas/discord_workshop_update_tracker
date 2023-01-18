@@ -5,7 +5,7 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${DB_PWD}
       MYSQL_DATABASE: bot_db
     volumes:
       - ./db:/docker-entrypoint-initdb.d
@@ -15,7 +15,7 @@ services:
   bot: 
     build: bot
     environment:
-      - MYSQL_URL=mysql://root:root@mysql/bot_db
+      - MYSQL_URL=mysql://root:${DB_PWD}@mysql/bot_db
       - DISCORD_TOKEN=${DISCORD_TOKEN}
     restart: 
       always
