@@ -2,9 +2,15 @@
     "cSpell.words": [
         "autosharded",
         "builtins",
+        "curr",
         "dashmap",
         "dotenv",
+        "itemcount",
+        "itertools",
         "mysql",
+        "publishedfiledetails",
+        "publishedfileids",
+        "reqwest",
         "tokio"
     ]
 }

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use mysql::{params, prelude::Queryable, Pool};
 use tracing::error;
 
@@ -7,8 +5,8 @@ use crate::Error;
 
 use super::ModInfo;
 
-pub fn get_mod(clone: Arc<Pool>, mod_id: u64) -> Result<Option<ModInfo>, Error> {
-    let mut conn = clone.get_conn().unwrap();
+pub fn get_mod(pool: &Pool, mod_id: u64) -> Result<Option<ModInfo>, Error> {
+    let mut conn = pool.get_conn()?;
 
     let res: Option<(u64, String, u64, Option<String>)> =
         conn.query_first(format!("SELECT * FROM Mods WHERE ModId = {};", mod_id))?;
@@ -24,8 +22,8 @@ pub fn get_mod(clone: Arc<Pool>, mod_id: u64) -> Result<Option<ModInfo>, Error> 
     }
 }
 
-pub fn add_mod(pool: Arc<Pool>, info: ModInfo) -> Result<(), Error> {
-    let mut conn = pool.get_conn().unwrap();
+pub fn add_mod(pool: &Pool, info: ModInfo) -> Result<(), Error> {
+    let mut conn = pool.get_conn()?;
 
     let res = conn.exec_drop(
         r"INSERT INTO Mods (ModId, ModName, LastUpdate, PreviewUrl) VALUES (:id, :name, :last_update, :preview_url);",
@@ -46,8 +44,8 @@ pub fn add_mod(pool: Arc<Pool>, info: ModInfo) -> Result<(), Error> {
     }
 }
 
-pub fn update_mod(pool: Arc<Pool>, info: ModInfo) -> Result<(), Error> {
-    let mut conn = pool.get_conn().unwrap();
+pub fn update_mod(pool: &Pool, info: ModInfo) -> Result<(), Error> {
+    let mut conn = pool.get_conn()?;
 
     let res = conn.exec_drop(
         r"UPDATE Mods SET ModName = :name, LastUpdate = :last_update, PreviewUrl = :preview_url WHERE ModId = :id;",

@@ -1,12 +1,10 @@
-use std::sync::Arc;
-
 use mysql::{params, prelude::Queryable, Pool};
 use poise::serenity_prelude::Guild;
 
 use crate::Error;
 
-pub fn add_server(pool: Arc<Pool>, guild: &Guild) -> Result<(), Error> {
-    let mut conn = pool.get_conn().unwrap();
+pub fn add_server(pool: &Pool, guild: &Guild) -> Result<(), Error> {
+    let mut conn = pool.get_conn()?;
 
     match conn.exec_drop(
         r"INSERT INTO Servers (ServerId) VALUES (:id);",
@@ -25,20 +23,20 @@ pub fn add_server(pool: Arc<Pool>, guild: &Guild) -> Result<(), Error> {
     }
 }
 
-pub fn remove_server(pool: Arc<Pool>, guild_id: u64) {
-    let mut conn = pool.get_conn().unwrap();
+pub fn remove_server(pool: &Pool, guild_id: u64) -> Result<(), Error> {
+    let mut conn = pool.get_conn()?;
 
     conn.exec_drop(
         r"DELETE FROM Servers WHERE ServerId = :id;",
         params! {
             "id" => guild_id,
         },
-    )
-    .unwrap();
+    )?;
+    Ok(())
 }
 
-pub fn set_update_channel(clone: Arc<Pool>, guild_id: u64, channel_id: u64) -> Result<(), Error> {
-    let mut conn = clone.get_conn().unwrap();
+pub fn set_update_channel(pool: &Pool, guild_id: u64, channel_id: u64) -> Result<(), Error> {
+    let mut conn = pool.get_conn()?;
 
     conn.exec_drop(
         r"UPDATE Servers SET ChannelId = :channel_id WHERE ServerId = :id;",
@@ -50,8 +48,8 @@ pub fn set_update_channel(clone: Arc<Pool>, guild_id: u64, channel_id: u64) -> R
     Ok(())
 }
 
-pub fn get_update_channel(clone: Arc<Pool>, guild_id: u64) -> Result<Option<u64>, Error> {
-    let mut conn = clone.get_conn().unwrap();
+pub fn get_update_channel(pool: &Pool, guild_id: u64) -> Result<Option<u64>, Error> {
+    let mut conn = pool.get_conn()?;
 
     let res: Option<Option<u64>> = conn.query_first(format!(
         "SELECT ChannelId FROM Servers WHERE ServerId = {};",
@@ -61,8 +59,8 @@ pub fn get_update_channel(clone: Arc<Pool>, guild_id: u64) -> Result<Option<u64>
     Ok(res.flatten())
 }
 
-pub fn set_schedule(clone: Arc<Pool>, guild_id: u64, interval: u64) -> Result<(), Error> {
-    let mut conn = clone.get_conn().unwrap();
+pub fn set_schedule(pool: &Pool, guild_id: u64, interval: u64) -> Result<(), Error> {
+    let mut conn = pool.get_conn()?;
 
     conn.exec_drop(
         r"UPDATE Servers SET Schedule = :interval WHERE ServerId = :id;",
@@ -74,8 +72,8 @@ pub fn set_schedule(clone: Arc<Pool>, guild_id: u64, interval: u64) -> Result<()
     Ok(())
 }
 
-pub fn get_schedule(clone: Arc<Pool>, guild_id: u64) -> Result<Option<u64>, Error> {
-    let mut conn = clone.get_conn().unwrap();
+pub fn get_schedule(pool: &Pool, guild_id: u64) -> Result<Option<u64>, Error> {
+    let mut conn = pool.get_conn()?;
 
     let res: Option<Option<u64>> = conn.query_first(format!(
         "SELECT Schedule FROM Servers WHERE ServerId = {}",
@@ -85,16 +83,16 @@ pub fn get_schedule(clone: Arc<Pool>, guild_id: u64) -> Result<Option<u64>, Erro
     Ok(res.flatten())
 }
 
-pub fn get_all_schedules(clone: Arc<Pool>) -> Result<Vec<(u64, Option<u64>)>, Error> {
-    let mut conn = clone.get_conn().unwrap();
+pub fn get_all_schedules(pool: &Pool) -> Result<Vec<(u64, Option<u64>)>, Error> {
+    let mut conn = pool.get_conn()?;
 
     let res: Vec<(u64, Option<u64>)> = conn.query("SELECT ServerId, Schedule FROM Servers;")?;
 
     Ok(res)
 }
 
-pub(crate) fn check_still_in_guild(pool: Arc<Pool>, guild_id: u64) -> Result<bool, Error> {
-    let mut conn = pool.get_conn().unwrap();
+pub fn check_still_in_guild(pool: &Pool, guild_id: u64) -> Result<bool, Error> {
+    let mut conn = pool.get_conn()?;
 
     let res: Option<Option<u64>> = conn.query_first(format!(
         "SELECT ServerId FROM Servers WHERE ServerId = {};",
@@ -102,4 +100,28 @@ pub(crate) fn check_still_in_guild(pool: Arc<Pool>, guild_id: u64) -> Result<boo
     ))?;
 
     Ok(res.flatten().is_some())
+}
+
+pub fn update_last_update_timestamp(pool: &Pool, guild_id: u64) -> Result<(), Error> {
+    let mut conn = pool.get_conn()?;
+
+    conn.exec_drop(
+        r"UPDATE Servers SET LastUpdate =  UNIX_TIMESTAMP() WHERE ServerId = :id;",
+        params! {
+            "id" => guild_id,
+        },
+    )?;
+
+    Ok(())
+}
+
+pub fn get_last_update(pool: &Pool, guild_id: u64) -> Result<Option<u64>, Error> {
+    let mut conn = pool.get_conn()?;
+
+    let res: Option<Option<u64>> = conn.query_first(format!(
+        "SELECT LastUpdate FROM Servers WHERE ServerId = {};",
+        guild_id
+    ))?;
+
+    Ok(res.flatten())
 }

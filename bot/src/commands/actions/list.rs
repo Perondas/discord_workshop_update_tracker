@@ -5,10 +5,23 @@ use crate::{db, Context, Error};
 /// List all the currently subscribed mods
 #[poise::command(track_edits, slash_command)]
 pub async fn list_mods(ctx: Context<'_>) -> Result<(), Error> {
-    let guild = ctx.guild().unwrap();
+    let guild = match ctx.guild() {
+        Some(guild) => guild,
+        None => {
+            ctx.say("This command can only be used in a guild.").await?;
+            return Ok(());
+        }
+    };
 
     let subscriptions =
-        db::subscriptions::get_all_subscriptions_of_guild(ctx.data().pool.clone(), guild.id.0)?;
+        match db::subscriptions::get_all_subscriptions_of_guild(&ctx.data().pool, guild.id.0) {
+            Ok(subscriptions) => subscriptions,
+            Err(_) => {
+                ctx.say("An error occurred while fetching the subscriptions.")
+                    .await?;
+                return Ok(());
+            }
+        };
 
     if subscriptions.is_empty() {
         ctx.say("There are no tracked mods.").await?;

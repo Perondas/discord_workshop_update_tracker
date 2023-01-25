@@ -12,7 +12,7 @@ use tracing::{debug, error, info};
 
 use crate::commands::{
     actions::{add::mod_add, list::list_mods, remove::mod_remove, restart::restart},
-    settings::{register_channel::*, set_schedule::*},
+    settings::{info::get_info, register_channel::*, set_schedule::*},
 };
 
 mod commands;
@@ -63,6 +63,7 @@ async fn main() {
             set_schedule(),
             list_mods(),
             restart(),
+            get_info(),
         ],
         on_error: |error| Box::pin(on_error(error)),
         pre_command: |ctx| {
@@ -83,14 +84,19 @@ async fn main() {
                     Event::GuildCreate { guild, is_new } => {
                         if *is_new {
                             debug!("New guild found: {}", guild.name);
-                            db::servers::add_server(state.pool.clone(), guild)?;
+                            db::servers::add_server(&state.pool, guild)?;
                         }
                         Ok(())
                     }
                     Event::GuildDelete { incomplete, .. } => {
-                        debug!("Guild deleted: {}", incomplete.id.0);
+                        debug!("Guild left: {}", incomplete.id.0);
                         state.scheduler.remove(incomplete.id.0);
-                        db::servers::remove_server(state.pool.clone(), incomplete.id.0);
+                        match db::servers::remove_server(&state.pool, incomplete.id.0) {
+                            Ok(_) => {}
+                            Err(e) => {
+                                error!("Failed to remove server from DB: {:?}", e);
+                            }
+                        }
 
                         Ok(())
                     }
@@ -106,7 +112,7 @@ async fn main() {
 
     let state = AppState {
         pool: pool.clone(),
-        scheduler: cron::Scheduler::new(pool.clone()),
+        scheduler: cron::Scheduler::new(pool),
     };
 
     let s = state.clone();
@@ -121,7 +127,7 @@ async fn main() {
                     c
                 })
                 .await
-                .unwrap();
+                .expect("Failed to set global application commands");
                 Ok(s)
             })
         })
@@ -129,7 +135,7 @@ async fn main() {
         .intents(serenity::GatewayIntents::non_privileged())
         .build()
         .await
-        .unwrap();
+        .expect("Failed to create framework");
 
     let framework_client = framework.client().cache_and_http.clone();
 
@@ -147,7 +153,7 @@ async fn main() {
 
     info!("Starting bot");
 
-    framework.start().await.unwrap();
+    framework.start().await.expect("Failed to start framework");
 }
 
 /// Show this help menu
@@ -171,18 +177,15 @@ You can limit availability of commands to specific users or roles trough the ser
     Ok(())
 }
 
-async fn on_error(error: poise::FrameworkError<'_, AppState, Error>) {
-    // This is our custom error handler
-    // They are many errors that can occur, so we only handle the ones we want to customize
-    // and forward the rest to the default handler
-    match error {
-        poise::FrameworkError::Setup { error, .. } => panic!("Failed to start bot: {:?}", error),
+async fn on_error(e: poise::FrameworkError<'_, AppState, Error>) {
+    match e {
+        poise::FrameworkError::Setup { error, .. } => panic!("Failed to start bot: {error}"),
         poise::FrameworkError::Command { error, ctx } => {
-            error!("Error in command `{}`: {:?}", ctx.command().name, error,);
+            error!("Error in command `{}`: {error:?}", ctx.command().name,);
         }
         error => {
             if let Err(e) = poise::builtins::on_error(error).await {
-                error!("Error while handling error: {}", e)
+                error!("Error while handling error: {}", e);
             }
         }
     }

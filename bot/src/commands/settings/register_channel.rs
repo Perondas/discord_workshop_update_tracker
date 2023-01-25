@@ -6,10 +6,30 @@ pub async fn register_channel(
     ctx: Context<'_>,
     #[description = "Channel Id for update broadcast"] channel_id: Option<u64>,
 ) -> Result<(), Error> {
-    let guild = ctx.guild().unwrap();
+    let guild = match ctx.guild() {
+        Some(guild) => guild,
+        None => {
+            ctx.say("This command can only be used in a guild.").await?;
+            return Ok(());
+        }
+    };
 
-    if !db::servers::check_still_in_guild(ctx.data().pool.clone(), guild.id.0)? {
-        db::servers::add_server(ctx.data().pool.clone(), &guild)?;
+    if !match db::servers::check_still_in_guild(&ctx.data().pool, guild.id.0) {
+        Ok(b) => b,
+        Err(_) => {
+            ctx.say("An error occurred while checking if the bot is still in the guild.")
+                .await?;
+            return Ok(());
+        }
+    } {
+        match db::servers::add_server(&ctx.data().pool, &guild) {
+            Ok(_) => (),
+            Err(_) => {
+                ctx.say("An error occurred while adding the server to the database.")
+                    .await?;
+                return Ok(());
+            }
+        }
     }
 
     let channel_id = match channel_id {
@@ -23,11 +43,7 @@ pub async fn register_channel(
         return Ok(());
     }
 
-    match db::servers::set_update_channel(
-        ctx.data().pool.clone(),
-        ctx.guild().unwrap().id.0,
-        channel_id,
-    ) {
+    match db::servers::set_update_channel(&ctx.data().pool, guild.id.0, channel_id) {
         Ok(_) => (),
         Err(_) => {
             ctx.say("An error occurred while updating the channel.")

@@ -2,6 +2,7 @@ CREATE TABLE Servers (
 	ServerId BIGINT NOT NULL,
 	ChannelId BIGINT NULL,
 	Schedule INT NULL,
+	LastUpdate BIGINT NULL,
 	CONSTRAINT Servers_PK PRIMARY KEY (ServerId)
 )
 ENGINE=InnoDB

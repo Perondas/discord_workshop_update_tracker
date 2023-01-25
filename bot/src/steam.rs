@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use lazy_static::lazy_static;
 use mysql::Pool;
@@ -15,19 +15,19 @@ use crate::{
     Error,
 };
 
-pub async fn get_mod(pool: Arc<Pool>, mod_id: u64) -> Result<ModInfo, Error> {
-    if let Ok(Some(mod_info)) = db::mods::get_mod(pool.clone(), mod_id) {
+pub async fn get_mod(pool: &Pool, mod_id: u64) -> Result<ModInfo, Error> {
+    if let Ok(Some(mod_info)) = db::mods::get_mod(pool, mod_id) {
         debug!("Found mod in db: {:?}", mod_info);
         return Ok(mod_info);
     }
     let mod_info = get_mod_from_steam(mod_id).await?;
 
-    db::mods::add_mod(pool.clone(), mod_info.clone())?;
+    db::mods::add_mod(pool, mod_info.clone())?;
 
     Ok(mod_info)
 }
 
-pub async fn get_latest_mod(pool: Arc<Pool>, mod_id: u64) -> Result<ModInfo, Error> {
+pub async fn get_latest_mod(pool: &Pool, mod_id: u64) -> Result<ModInfo, Error> {
     let mod_info = get_mod_from_steam(mod_id).await?;
 
     db::mods::update_mod(pool, mod_info.clone())?;

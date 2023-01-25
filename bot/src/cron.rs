@@ -35,7 +35,7 @@ impl Scheduler {
     pub async fn start_cron(&self, client: Arc<CacheAndHttp>) -> Result<(), Error> {
         *self.client.write().await = Some(client.clone());
 
-        let schedules = db::servers::get_all_schedules(self.pool.clone())?;
+        let schedules = db::servers::get_all_schedules(&self.pool)?;
         let count = schedules.len();
 
         info!(
@@ -47,7 +47,11 @@ impl Scheduler {
             if let Some(hours) = schedule {
                 let s = self.clone();
                 let h = tokio::spawn(async move {
-                    work_loop(s, guild_id, hours).await.unwrap();
+                    work_loop(s, guild_id, hours)
+                        .await
+                        // TODO: Handle a failed cron job
+                        // Maybe restart it?
+                        .expect("Cron job failed");
                 });
                 if let Some(old) = self.jobs.insert(guild_id, h) {
                     old.abort();
@@ -62,12 +66,14 @@ impl Scheduler {
     }
 
     pub async fn start_schedule(&self, guild_id: u64) -> Result<(), Error> {
-        let hours = db::servers::get_schedule(self.pool.clone(), guild_id)?
+        let hours = db::servers::get_schedule(&self.pool, guild_id)?
             .ok_or("No schedule set for this server.")?;
 
         let s = self.clone();
         let h = tokio::spawn(async move {
-            work_loop(s, guild_id, hours).await.unwrap();
+            work_loop(s, guild_id, hours)
+                .await
+                .expect("Cron job failed");
         });
         if let Some(old) = self.jobs.insert(guild_id, h) {
             // If there was already a job running, abort it
@@ -76,11 +82,15 @@ impl Scheduler {
 
         Ok(())
     }
+
+    pub fn is_running(&self, guild_id: u64) -> bool {
+        self.jobs.contains_key(&guild_id)
+    }
 }
 
 async fn work_loop(s: Scheduler, guild_id: u64, hours: u64) -> Result<(), Error> {
     loop {
-        if !db::servers::check_still_in_guild(s.pool.clone(), guild_id)? {
+        if !db::servers::check_still_in_guild(&s.pool, guild_id)? {
             warn!(
                 "Guild {} is no longer in the guild list, stopping cron job",
                 guild_id
@@ -98,6 +108,7 @@ async fn work_loop(s: Scheduler, guild_id: u64, hours: u64) -> Result<(), Error>
                 break;
             }
         }
+        db::servers::update_last_update_timestamp(&s.pool, guild_id)?;
         sleep(Duration::from_secs(hours * 60 * 60)).await;
     }
 
@@ -108,14 +119,14 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
     let client = scheduler.client.read().await;
     if let Some(client) = &*client {
         let subscriptions =
-            db::subscriptions::get_all_subscriptions_of_guild(scheduler.pool.clone(), guild_id)?;
+            db::subscriptions::get_all_subscriptions_of_guild(&scheduler.pool, guild_id)?;
 
         let mut updated = Vec::new();
         let mut unknown = Vec::new();
         let mut failed = Vec::new();
 
         for (last_notify, mod_info) in subscriptions {
-            let mod_info = steam::get_mod(scheduler.pool.clone(), mod_info.id).await?;
+            let mod_info = steam::get_mod(&scheduler.pool, mod_info.id).await?;
 
             if mod_info.last_updated > last_notify {
                 updated.push((mod_info, last_notify));
@@ -125,7 +136,7 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
         }
 
         for (last_notify, mod_info) in unknown {
-            if let Ok(info) = steam::get_latest_mod(scheduler.pool.clone(), mod_info.id).await {
+            if let Ok(info) = steam::get_latest_mod(&scheduler.pool, mod_info.id).await {
                 if info.last_updated > last_notify {
                     updated.push((info, last_notify));
                 }
@@ -134,7 +145,7 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
             }
         }
 
-        let update_channel = db::servers::get_update_channel(scheduler.pool.clone(), guild_id)?
+        let update_channel = db::servers::get_update_channel(&scheduler.pool, guild_id)?
             .ok_or("No update channel set")?;
 
         let id = GuildId(guild_id);
@@ -142,7 +153,16 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
 
         let channels = g.channels(&client.http).await?;
 
-        let (_, c) = channels.iter().find(|c| c.0 .0 == update_channel).unwrap();
+        let c = match channels.iter().find(|c| c.0 .0 == update_channel) {
+            Some(c) => c.1,
+            None => {
+                return Err(format!(
+                    "Update channel {} not found in guild {}",
+                    update_channel, guild_id
+                )
+                .into())
+            }
+        };
 
         if updated.is_empty() {
             info!("No updates for guild: {}", guild_id);
@@ -155,11 +175,7 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
             }
 
             for (mod_info, _) in updated {
-                db::subscriptions::update_last_notify(
-                    scheduler.pool.clone(),
-                    guild_id,
-                    mod_info.id,
-                )?;
+                db::subscriptions::update_last_notify(&scheduler.pool, guild_id, mod_info.id)?;
             }
         }
 
@@ -212,26 +228,18 @@ async fn send_in_chunks_updates(
             ));
 
             for mod_info in chunk.iter() {
-                if mod_info.preview_url.is_some() {
-                    d.add_embed(|e| {
-                        e.title(mod_info.name.clone());
-                        e.url(format!(
-                            "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                            mod_info.id
-                        ));
-                        e.image(mod_info.preview_url.clone().unwrap());
-                        e
-                    });
-                } else {
-                    d.add_embed(|e| {
-                        e.title(format!("{}, Id: {}", mod_info.name.clone(), mod_info.id));
-                        e.url(format!(
-                            "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                            mod_info.id
-                        ));
-                        e
-                    });
-                }
+                d.add_embed(|e| {
+                    e.title(mod_info.name.clone());
+                    e.url(format!(
+                        "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
+                        mod_info.id
+                    ));
+                    if let Some(url) = mod_info.preview_url.clone() {
+                        e.image(url);
+                    }
+
+                    e
+                });
             }
 
             d
@@ -251,26 +259,18 @@ async fn send_in_one_updates(
         d.content("The following Items have been updated:".to_string());
 
         for (mod_info, _) in updated.iter() {
-            if mod_info.preview_url.is_some() {
-                d.add_embed(|e| {
-                    e.title(mod_info.name.clone());
-                    e.url(format!(
-                        "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                        mod_info.id
-                    ));
-                    e.image(mod_info.preview_url.clone().unwrap());
-                    e
-                });
-            } else {
-                d.add_embed(|e| {
-                    e.title(mod_info.name.clone());
-                    e.url(format!(
-                        "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                        mod_info.id
-                    ));
-                    e
-                });
-            }
+            d.add_embed(|e| {
+                e.title(mod_info.name.clone());
+                e.url(format!(
+                    "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
+                    mod_info.id
+                ));
+                if let Some(url) = mod_info.preview_url.clone() {
+                    e.image(url);
+                }
+
+                e
+            });
         }
 
         d
