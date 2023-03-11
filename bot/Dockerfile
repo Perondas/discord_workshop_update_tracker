@@ -1,8 +1,22 @@
-FROM rust:latest
+FROM rust:latest AS chef
 
-WORKDIR /usr/src/bot
+RUN cargo install cargo-chef
+WORKDIR /bot
+
+FROM chef AS planner
 COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-RUN cargo install --path .
+FROM chef AS builder
+COPY --from=planner /bot/recipe.json recipe.json
 
-CMD ["bot"]
+RUN cargo chef cook --release --recipe-path recipe.json
+
+COPY . .
+RUN cargo build --release --bin bot
+
+FROM debian:buster-slim AS runtime
+WORKDIR /bot
+
+COPY --from=builder /bot/target/release/bot /usr/local/bin
+ENTRYPOINT ["/usr/local/bin/bot"]
