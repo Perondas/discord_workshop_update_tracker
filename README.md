@@ -22,7 +22,7 @@ The bot requires the following permissions:
 
 ## Setup
 Rename the .evn.example file to .env and fill in the values. The bot will not work without this file.
-Run docker compose up to start the bot.sa
+Run docker compose up to start the bot.
 
 ## TODO
 - [ ] Add a command to manually check for updates
