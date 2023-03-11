@@ -122,14 +122,10 @@ pub fn update_subscription_note(
     conn.exec_drop(
         r"UPDATE Subscriptions SET Note = :note WHERE ServerId = :guild_id AND ItemId = :item_id;",
         params! {
-        <<<<<<< HEAD
-                    "note" => note.map(sanitize_string),
-        =======
-                    "note" => note.map(|s| sanitize_string(s)),
-        >>>>>>> 8bf74d0d5c4f20cb679bb294f223694024f9945f
-                    "guild_id" => guild_id,
-                    "item_id" => item_id,
-                },
+            "note" => note.map(sanitize_string),
+            "guild_id" => guild_id,
+            "item_id" => item_id,
+        },
     )?;
     Ok(())
 }
