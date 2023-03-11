@@ -112,6 +112,12 @@ async fn work_loop(s: Scheduler, guild_id: u64, hours: u64) -> Result<(), Error>
         sleep(Duration::from_secs(hours * 60 * 60)).await;
     }
 
+    // We need to remove ourself from the jobs list
+    // We do this in a separate task so we don't kill ourselves
+    tokio::spawn(async move {
+        s.remove(guild_id);
+    });
+
     Ok(())
 }
 

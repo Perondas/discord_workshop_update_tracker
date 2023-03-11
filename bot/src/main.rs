@@ -16,8 +16,8 @@ use crate::commands::{
 };
 
 mod commands;
-mod cron;
 mod db;
+mod scheduler;
 mod steam;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -26,7 +26,7 @@ type Context<'a> = poise::Context<'a, AppState, Error>;
 #[derive(Clone)]
 pub struct AppState {
     pool: Arc<Pool>,
-    scheduler: cron::Scheduler,
+    scheduler: scheduler::Scheduler,
 }
 
 #[tokio::main]
@@ -112,7 +112,7 @@ async fn main() {
 
     let state = AppState {
         pool: pool.clone(),
-        scheduler: cron::Scheduler::new(pool),
+        scheduler: scheduler::Scheduler::new(pool),
     };
 
     let s = state.clone();
