@@ -68,3 +68,14 @@ pub fn update_last_notify(pool: &Pool, guild_id: u64, mod_id: u64) -> Result<(),
     )?;
     Ok(())
 }
+
+pub fn count_guild_subscriptions(pool: &Pool, guild_id: u64) -> Result<u64, Error> {
+    let mut conn = pool.get_conn()?;
+
+    let res: Vec<(u64,)> = conn.query(format!(
+        "SELECT COUNT(*) FROM Subscriptions WHERE ServerId = {}",
+        guild_id
+    ))?;
+
+    Ok(res[0].0)
+}

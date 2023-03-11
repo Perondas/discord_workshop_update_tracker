@@ -11,16 +11,14 @@ pub async fn get_info(ctx: Context<'_>) -> Result<(), Error> {
         }
     };
 
-    let subscriptions =
-        match db::subscriptions::get_all_subscriptions_of_guild(&ctx.data().pool, guild.id.0) {
-            Ok(subscriptions) => subscriptions,
-            Err(_) => {
-                ctx.say("An error occurred while fetching the subscriptions.")
-                    .await?;
-                return Ok(());
-            }
-        };
-    let count = subscriptions.len();
+    let count = match db::subscriptions::count_guild_subscriptions(&ctx.data().pool, guild.id.0) {
+        Ok(count) => count,
+        Err(_) => {
+            ctx.say("An error occurred while fetching the subscriptions.")
+                .await?;
+            return Ok(());
+        }
+    };
 
     let is_running = ctx.data().scheduler.is_running(guild.id.0);
 
