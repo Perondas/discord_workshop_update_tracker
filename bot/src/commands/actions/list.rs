@@ -13,7 +13,7 @@ pub async fn list_items(ctx: Context<'_>) -> Result<(), Error> {
     let subscriptions = ok_or_respond!(
         ctx,
         db::subscriptions::get_all_subscriptions_of_guild(&ctx.data().pool, guild.id.0),
-        "test"
+        "An error occurred while fetching the subscriptions."
     );
 
     if subscriptions.is_empty() {

@@ -27,6 +27,10 @@ pub async fn get_item(pool: &Pool, item_id: u64) -> Result<ItemInfo, Error> {
     Ok(item_info)
 }
 
+pub async fn get_collection_ids(_pool: &Pool, collection_id: u64) -> Result<Vec<u64>, Error> {
+    get_collection_members_from_steam(collection_id).await
+}
+
 pub async fn get_latest_item(pool: &Pool, item_id: u64) -> Result<ItemInfo, Error> {
     let item_info = get_item_from_steam(item_id).await?;
 
@@ -74,4 +78,35 @@ async fn get_item_from_steam(item_id: u64) -> Result<ItemInfo, Error> {
         last_updated,
         preview_url,
     })
+}
+
+async fn get_collection_members_from_steam(collection_id: u64) -> Result<Vec<u64>, Error> {
+    let permit = SEMAPHORE.acquire().await?;
+    let c = reqwest::Client::new();
+
+    let url = "https://api.steampowered.com/ISteamRemoteStorage/GetCollectionDetails/v1/";
+
+    let mut params = HashMap::new();
+    let id = collection_id.to_string();
+    params.insert("collectioncount", "1");
+    params.insert("publishedfileids[0]", &id);
+
+    let res = c.post(url).form(&params).send().await?;
+
+    std::mem::drop(permit);
+
+    let parse = json::parse(std::str::from_utf8(&res.bytes().await?)?)?;
+
+    let mut members = Vec::new();
+
+    for member in parse["response"]["collectiondetails"][0]["children"].members() {
+        members.push(
+            member["publishedfileid"]
+                .as_str()
+                .ok_or("No member id")?
+                .parse()?,
+        );
+    }
+
+    Ok(members)
 }

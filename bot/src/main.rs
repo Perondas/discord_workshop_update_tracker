@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use commands::actions::add_multiple::item_batch_add;
+use commands::actions::add_multiple::{collection_add, item_batch_add};
 use mysql::Pool;
 use poise::{
     builtins,
@@ -64,6 +64,7 @@ async fn main() {
             list_items(),
             restart(),
             get_info(),
+            collection_add(),
         ],
         on_error: |error| Box::pin(on_error(error)),
         pre_command: |ctx| {

@@ -1,7 +1,10 @@
+use poise::serenity_prelude::{Guild, GuildChannel};
+use tracing::error;
+
 use crate::{
-    commands::common::{get_channel, get_guild, get_guild_channel},
+    commands::common::{get_channel, get_guild, get_guild_channel, ok_or_respond},
     db,
-    steam::get_item,
+    steam::{self, get_item},
     Context, Error,
 };
 
@@ -39,6 +42,39 @@ pub async fn item_batch_add(
 
     ctx.say("Success").await?;
 
+    add_by_id(ctx, item_ids, guild, g).await
+}
+
+/// Add all members of a collection to the tracked items
+#[poise::command(track_edits, slash_command, rename = "add_collection")]
+pub async fn collection_add(
+    ctx: Context<'_>,
+    #[description = "The id of the collection to be added"] collection_id: u64,
+) -> Result<(), Error> {
+    let guild = get_guild!(ctx);
+
+    let item_channel = get_channel!(ctx, guild.id.0);
+
+    let g = get_guild_channel!(ctx, guild, item_channel);
+
+    let collection = ok_or_respond!(
+        ctx,
+        steam::get_collection_ids(&ctx.data().pool, collection_id).await,
+        "An error occurred while fetching the collection."
+    );
+
+    ctx.say(format!("Got collection. Adding {} items", collection.len()))
+        .await?;
+
+    add_by_id(ctx, collection, guild, g).await
+}
+
+async fn add_by_id(
+    ctx: Context<'_>,
+    item_ids: Vec<u64>,
+    guild: Guild,
+    g: GuildChannel,
+) -> Result<(), Error> {
     for item_id in item_ids {
         let item_info = match get_item(&ctx.data().pool, item_id).await {
             Ok(item_info) => item_info,
@@ -58,6 +94,10 @@ pub async fn item_batch_add(
         match db::subscriptions::add_subscription(&ctx.data().pool, guild.id.0, item_info.id) {
             Ok(_) => (),
             Err(_) => {
+                error!(
+                    "An error occurred while adding the item {} to the database.",
+                    item_id
+                );
                 g.send_message(ctx, |d| {
                     d.content(format!(
                         "An error occurred while subscribing to the item {}.",

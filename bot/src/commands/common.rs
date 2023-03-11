@@ -47,7 +47,8 @@ macro_rules! ok_or_respond {
     ($ctx:expr, $func:expr, $msg:expr) => {
         match $func {
             Ok(val) => val,
-            Err(_) => {
+            Err(e) => {
+                tracing::error!("Error while executing command: {e}");
                 $ctx.say($msg).await?;
                 return Ok(());
             }

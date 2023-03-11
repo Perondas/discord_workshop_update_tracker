@@ -105,6 +105,8 @@ async fn work_loop(s: Scheduler, guild_id: u64, hours: u64) -> Result<(), Error>
     interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
 
     loop {
+        interval.tick().await;
+
         if !db::servers::check_still_in_guild(&s.pool, guild_id)? {
             warn!(
                 "Guild {} is no longer in the guild list, stopping tracking job",
@@ -124,8 +126,6 @@ async fn work_loop(s: Scheduler, guild_id: u64, hours: u64) -> Result<(), Error>
             }
         }
         db::servers::update_last_update_timestamp(&s.pool, guild_id)?;
-
-        interval.tick().await;
     }
 
     Ok(())

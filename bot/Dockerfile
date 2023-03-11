@@ -16,6 +16,8 @@ COPY . .
 RUN cargo build --release --bin bot
 
 FROM debian AS runtime
+RUN apt-get update
+RUN apt-get install ca-certificates -y
 
 WORKDIR /bot
 
