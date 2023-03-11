@@ -9,6 +9,7 @@ use crate::{
 };
 
 #[derive(Debug, Modal)]
+#[name = "Edit Note"]
 struct NoteModal {
     #[name = "Note"]
     #[max_length = 500]
