@@ -15,7 +15,8 @@ RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN cargo build --release --bin bot
 
-FROM debian:buster-slim AS runtime
+FROM debian AS runtime
+
 WORKDIR /bot
 
 COPY --from=builder /bot/target/release/bot /usr/local/bin
