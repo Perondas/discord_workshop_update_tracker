@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// Get info about your bot
-#[poise::command(track_edits, slash_command, rename = "info")]
+#[poise::command(slash_command, rename = "info")]
 pub async fn get_info(ctx: Context<'_>) -> Result<(), Error> {
     let guild = get_guild!(ctx);
 

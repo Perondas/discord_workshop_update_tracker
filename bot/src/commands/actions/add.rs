@@ -6,7 +6,7 @@ use crate::{
 };
 
 /// Add a item to the tracked items
-#[poise::command(track_edits, slash_command, rename = "add")]
+#[poise::command(slash_command, rename = "add")]
 pub async fn item_add(
     ctx: Context<'_>,
     #[description = "The id of the item to be tracked"] item_id: u64,

@@ -9,7 +9,7 @@ use crate::{
 };
 
 /// Add multiple items to the tracked items
-#[poise::command(track_edits, slash_command, rename = "add_multiple")]
+#[poise::command(slash_command, rename = "add_multiple")]
 pub async fn item_batch_add(
     ctx: Context<'_>,
     #[description = "The id of the item to be tracked. Separated by a comma(,)"] item_ids: String,
@@ -46,7 +46,7 @@ pub async fn item_batch_add(
 }
 
 /// Add all members of a collection to the tracked items
-#[poise::command(track_edits, slash_command, rename = "add_collection")]
+#[poise::command(slash_command, rename = "add_collection")]
 pub async fn collection_add(
     ctx: Context<'_>,
     #[description = "The id of the collection to be added"] collection_id: u64,

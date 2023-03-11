@@ -6,7 +6,7 @@ use crate::{
 };
 
 /// List all the currently subscribed items
-#[poise::command(track_edits, slash_command, rename = "list")]
+#[poise::command(slash_command, rename = "list")]
 pub async fn list_items(ctx: Context<'_>) -> Result<(), Error> {
     let guild = get_guild!(ctx);
 
