@@ -202,10 +202,10 @@ dependencies = [
  "mysql",
  "poise",
  "reqwest",
+ "sql_lexer",
  "tokio",
  "tracing",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]
@@ -2056,6 +2056,12 @@ name = "spin"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
+
+[[package]]
+name = "sql_lexer"
+version = "0.9.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d2053a1b4c7ed721c7fa79dca4d82c28dfe132e0785366303558dbafe216e29c"
 
 [[package]]
 name = "static_assertions"

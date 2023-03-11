@@ -17,7 +17,6 @@ pub async fn item_batch_add(
     let mut errors = vec![];
     let item_ids: Vec<_> = item_ids
         .split(',')
-        .into_iter()
         .map(|s| {
             let s = s.trim();
             s.parse::<u64>()

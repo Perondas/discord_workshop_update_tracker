@@ -1,4 +1,5 @@
 use mysql::{params, prelude::Queryable, Pool};
+use sql_lexer::sanitize_string;
 use tracing::error;
 
 use crate::Error;
@@ -29,9 +30,9 @@ pub fn add_item(pool: &Pool, info: ItemInfo) -> Result<(), Error> {
         r"INSERT INTO Items (ItemId, ItemName, LastUpdate, PreviewUrl) VALUES (:id, :name, :last_update, :preview_url);",
         params! {
             "id" => info.id,
-            "name" => info.name,
+            "name" => sanitize_string(info.name),
             "last_update" => info.last_updated,
-            "preview_url" => info.preview_url,
+            "preview_url" => info.preview_url.map(sanitize_string),
         },
     );
 
@@ -51,9 +52,9 @@ pub fn update_item(pool: &Pool, info: ItemInfo) -> Result<(), Error> {
         r"UPDATE Items SET ItemName = :name, LastUpdate = :last_update, PreviewUrl = :preview_url WHERE ItemId = :id;",
         params! {
             "id" => info.id,
-            "name" => info.name,
+            "name" => sanitize_string(info.name),
             "last_update" => info.last_updated,
-            "preview_url" => info.preview_url,
+            "preview_url" => info.preview_url.map(sanitize_string),
         },
     );
 

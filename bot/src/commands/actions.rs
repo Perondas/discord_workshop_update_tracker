@@ -3,6 +3,7 @@ use poise::serenity_prelude::{Guild, GuildChannel};
 pub mod add;
 pub mod add_multiple;
 pub mod list;
+pub mod notes;
 pub mod remove;
 pub mod restart;
 
