@@ -79,3 +79,15 @@ pub fn count_guild_subscriptions(pool: &Pool, guild_id: u64) -> Result<u64, Erro
 
     Ok(res[0].0)
 }
+
+pub fn remove_all_subscriptions(pool: &Pool, guild_id: u64) -> Result<(), Error> {
+    let mut conn = pool.get_conn()?;
+
+    conn.exec_drop(
+        r"DELETE FROM Subscriptions WHERE ServerId = :guild_id;",
+        params! {
+            "guild_id" => guild_id,
+        },
+    )?;
+    Ok(())
+}

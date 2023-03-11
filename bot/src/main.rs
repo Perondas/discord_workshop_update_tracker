@@ -11,7 +11,12 @@ use tokio::time::sleep;
 use tracing::{debug, error, info};
 
 use crate::commands::{
-    actions::{add::item_add, list::list_items, remove::item_remove, restart::restart},
+    actions::{
+        add::item_add,
+        list::list_items,
+        remove::{item_remove, remove_all},
+        restart::restart,
+    },
     settings::{info::get_info, register_channel::*, set_schedule::*},
 };
 
@@ -65,6 +70,7 @@ async fn main() {
             restart(),
             get_info(),
             collection_add(),
+            remove_all(),
         ],
         on_error: |error| Box::pin(on_error(error)),
         pre_command: |ctx| {
@@ -158,7 +164,7 @@ async fn main() {
 }
 
 /// Show this help menu
-#[poise::command(track_edits, slash_command)]
+#[poise::command(slash_command)]
 async fn help(
     ctx: Context<'_>,
     #[description = "Specific command to show help about"]
