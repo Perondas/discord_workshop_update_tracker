@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use commands::actions::add_multiple::mod_batch_add;
+use commands::actions::add_multiple::item_batch_add;
 use mysql::Pool;
 use poise::{
     builtins,
@@ -11,7 +11,7 @@ use tokio::time::sleep;
 use tracing::{debug, error, info};
 
 use crate::commands::{
-    actions::{add::mod_add, list::list_mods, remove::mod_remove, restart::restart},
+    actions::{add::item_add, list::list_items, remove::item_remove, restart::restart},
     settings::{info::get_info, register_channel::*, set_schedule::*},
 };
 
@@ -56,12 +56,12 @@ async fn main() {
     let options = poise::FrameworkOptions {
         commands: vec![
             help(),
-            mod_add(),
-            mod_batch_add(),
-            mod_remove(),
+            item_add(),
+            item_batch_add(),
+            item_remove(),
             register_channel(),
             set_schedule(),
-            list_mods(),
+            list_items(),
             restart(),
             get_info(),
         ],

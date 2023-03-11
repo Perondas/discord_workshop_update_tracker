@@ -2,9 +2,9 @@ use itertools::Itertools;
 
 use crate::{db, Context, Error};
 
-/// List all the currently subscribed mods
+/// List all the currently subscribed items
 #[poise::command(track_edits, slash_command)]
-pub async fn list_mods(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn list_items(ctx: Context<'_>) -> Result<(), Error> {
     let guild = match ctx.guild() {
         Some(guild) => guild,
         None => {
@@ -24,12 +24,12 @@ pub async fn list_mods(ctx: Context<'_>) -> Result<(), Error> {
         };
 
     if subscriptions.is_empty() {
-        ctx.say("There are no tracked mods.").await?;
+        ctx.say("There are no tracked items.").await?;
         return Ok(());
     }
 
     if subscriptions.len() > 10 {
-        let mods: Vec<String> = subscriptions
+        let items: Vec<String> = subscriptions
             .iter()
             .chunks(10)
             .into_iter()
@@ -45,11 +45,11 @@ pub async fn list_mods(ctx: Context<'_>) -> Result<(), Error> {
                     .join(", ")
             })
             .collect();
-        let parts = mods.len();
+        let parts = items.len();
 
-        for (i, part) in mods.iter().enumerate() {
+        for (i, part) in items.iter().enumerate() {
             ctx.say(format!(
-                "Currently tracked mods (part {} of {}): {}",
+                "Currently tracked items (part {} of {}): {}",
                 i + 1,
                 parts,
                 part
@@ -57,7 +57,7 @@ pub async fn list_mods(ctx: Context<'_>) -> Result<(), Error> {
             .await?;
         }
     } else {
-        let mods = subscriptions
+        let items = subscriptions
             .iter()
             .map(|(_, info)| {
                 format!(
@@ -68,7 +68,8 @@ pub async fn list_mods(ctx: Context<'_>) -> Result<(), Error> {
             .collect::<Vec<String>>()
             .join(", ");
 
-        ctx.say(format!("Currently tracked mods: {}", mods)).await?;
+        ctx.say(format!("Currently tracked items: {}", items))
+            .await?;
     }
 
     Ok(())

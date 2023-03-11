@@ -149,23 +149,23 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
     let mut unknown = Vec::new();
     let mut failed = Vec::new();
 
-    for (last_notify, mod_info) in subscriptions {
-        let mod_info = steam::get_mod(&scheduler.pool, mod_info.id).await?;
+    for (last_notify, item_info) in subscriptions {
+        let item_info = steam::get_item(&scheduler.pool, item_info.id).await?;
 
-        if mod_info.last_updated > last_notify {
-            updated.push((mod_info, last_notify));
+        if item_info.last_updated > last_notify {
+            updated.push((item_info, last_notify));
         } else {
-            unknown.push((last_notify, mod_info));
+            unknown.push((last_notify, item_info));
         }
     }
 
-    for (last_notify, mod_info) in unknown {
-        if let Ok(info) = steam::get_latest_mod(&scheduler.pool, mod_info.id).await {
+    for (last_notify, item_info) in unknown {
+        if let Ok(info) = steam::get_latest_item(&scheduler.pool, item_info.id).await {
             if info.last_updated > last_notify {
                 updated.push((info, last_notify));
             }
         } else {
-            failed.push((last_notify, mod_info));
+            failed.push((last_notify, item_info));
         }
     }
 
@@ -198,8 +198,8 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
             send_in_one_updates(c, client, &updated).await?;
         }
 
-        for (mod_info, _) in updated {
-            db::subscriptions::update_last_notify(&scheduler.pool, guild_id, mod_info.id)?;
+        for (item_info, _) in updated {
+            db::subscriptions::update_last_notify(&scheduler.pool, guild_id, item_info.id)?;
         }
     }
 
@@ -207,12 +207,12 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
         c.send_message(&client, |d| {
             d.content("The following Items could not be updated:".to_string());
 
-            for (_, mod_info) in failed.iter() {
+            for (_, item_info) in failed.iter() {
                 d.add_embed(|e| {
-                    e.title(format!("{}, Id: {}", mod_info.name.clone(), mod_info.id));
+                    e.title(format!("{}, Id: {}", item_info.name.clone(), item_info.id));
                     e.url(format!(
                         "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                        mod_info.id
+                        item_info.id
                     ));
                     e
                 });
@@ -229,9 +229,9 @@ async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Er
 async fn send_in_chunks_updates(
     c: &poise::serenity_prelude::GuildChannel,
     client: &CacheAndHttp,
-    updated: &[(db::ModInfo, u64)],
+    updated: &[(db::ItemInfo, u64)],
 ) -> Result<(), Error> {
-    let chunks: Vec<Vec<db::ModInfo>> = updated
+    let chunks: Vec<Vec<db::ItemInfo>> = updated
         .iter()
         .chunks(5)
         .into_iter()
@@ -248,14 +248,14 @@ async fn send_in_chunks_updates(
                 parts
             ));
 
-            for mod_info in chunk.iter() {
+            for item_info in chunk.iter() {
                 d.add_embed(|e| {
-                    e.title(mod_info.name.clone());
+                    e.title(item_info.name.clone());
                     e.url(format!(
                         "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                        mod_info.id
+                        item_info.id
                     ));
-                    if let Some(url) = mod_info.preview_url.clone() {
+                    if let Some(url) = item_info.preview_url.clone() {
                         e.image(url);
                     }
 
@@ -274,19 +274,19 @@ async fn send_in_chunks_updates(
 async fn send_in_one_updates(
     c: &poise::serenity_prelude::GuildChannel,
     client: &Arc<CacheAndHttp>,
-    updated: &[(db::ModInfo, u64)],
+    updated: &[(db::ItemInfo, u64)],
 ) -> Result<(), Error> {
     c.send_message(&client, |d| {
         d.content("The following Items have been updated:".to_string());
 
-        for (mod_info, _) in updated.iter() {
+        for (item_info, _) in updated.iter() {
             d.add_embed(|e| {
-                e.title(mod_info.name.clone());
+                e.title(item_info.name.clone());
                 e.url(format!(
                     "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                    mod_info.id
+                    item_info.id
                 ));
-                if let Some(url) = mod_info.preview_url.clone() {
+                if let Some(url) = item_info.preview_url.clone() {
                     e.image(url);
                 }
 

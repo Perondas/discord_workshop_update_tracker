@@ -2,12 +2,12 @@ use mysql::{params, prelude::Queryable, Pool};
 
 use crate::Error;
 
-use super::ModInfo;
+use super::ItemInfo;
 
 pub fn get_all_subscriptions_of_guild(
     pool: &Pool,
     guild_id: u64,
-) -> Result<Vec<(u64, ModInfo)>, Error> {
+) -> Result<Vec<(u64, ItemInfo)>, Error> {
     let mut conn = pool.get_conn()?;
 
     let res: Vec<(u64, u64, String, u64, Option<String>)> = conn.query(format!(
@@ -19,7 +19,7 @@ pub fn get_all_subscriptions_of_guild(
         .map(|(last_notified, id, name, last_updated, preview_url)| {
             Ok((
                 *last_notified,
-                ModInfo {
+                ItemInfo {
                     id: *id,
                     name: name.clone(),
                     last_updated: *last_updated,

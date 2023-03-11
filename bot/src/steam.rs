@@ -11,38 +11,38 @@ lazy_static! {
 }
 
 use crate::{
-    db::{self, ModInfo},
+    db::{self, ItemInfo},
     Error,
 };
 
-pub async fn get_mod(pool: &Pool, mod_id: u64) -> Result<ModInfo, Error> {
-    if let Ok(Some(mod_info)) = db::mods::get_mod(pool, mod_id) {
-        debug!("Found mod in db: {:?}", mod_info);
-        return Ok(mod_info);
+pub async fn get_item(pool: &Pool, item_id: u64) -> Result<ItemInfo, Error> {
+    if let Ok(Some(item_info)) = db::items::get_item(pool, item_id) {
+        debug!("Found item in db: {:?}", item_info);
+        return Ok(item_info);
     }
-    let mod_info = get_mod_from_steam(mod_id).await?;
+    let item_info = get_item_from_steam(item_id).await?;
 
-    db::mods::add_mod(pool, mod_info.clone())?;
+    db::items::add_item(pool, item_info.clone())?;
 
-    Ok(mod_info)
+    Ok(item_info)
 }
 
-pub async fn get_latest_mod(pool: &Pool, mod_id: u64) -> Result<ModInfo, Error> {
-    let mod_info = get_mod_from_steam(mod_id).await?;
+pub async fn get_latest_item(pool: &Pool, item_id: u64) -> Result<ItemInfo, Error> {
+    let item_info = get_item_from_steam(item_id).await?;
 
-    db::mods::update_mod(pool, mod_info.clone())?;
+    db::items::update_item(pool, item_info.clone())?;
 
-    Ok(mod_info)
+    Ok(item_info)
 }
 
-async fn get_mod_from_steam(mod_id: u64) -> Result<ModInfo, Error> {
+async fn get_item_from_steam(item_id: u64) -> Result<ItemInfo, Error> {
     let permit = SEMAPHORE.acquire().await?;
     let c = reqwest::Client::new();
 
     let url = "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/";
 
     let mut params = HashMap::new();
-    let id = mod_id.to_string();
+    let id = item_id.to_string();
     params.insert("itemcount", "1");
     params.insert("publishedfileids[0]", &id);
 
@@ -68,8 +68,8 @@ async fn get_mod_from_steam(mod_id: u64) -> Result<ModInfo, Error> {
         None
     };
 
-    Ok(ModInfo {
-        id: mod_id,
+    Ok(ItemInfo {
+        id: item_id,
         name,
         last_updated,
         preview_url,

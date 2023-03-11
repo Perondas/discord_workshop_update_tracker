@@ -2,12 +2,12 @@ use mysql::{Opts, Pool};
 
 use crate::Error;
 
-pub mod mods;
+pub mod items;
 pub mod servers;
 pub mod subscriptions;
 
 #[derive(Debug, Clone)]
-pub struct ModInfo {
+pub struct ItemInfo {
     pub id: u64,
     pub name: String,
     pub last_updated: u64,
