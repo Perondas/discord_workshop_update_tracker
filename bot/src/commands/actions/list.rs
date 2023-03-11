@@ -28,7 +28,7 @@ pub async fn list_items(ctx: Context<'_>) -> Result<(), Error> {
             .into_iter()
             .map(|chunk| {
                 chunk
-                    .map(|(_, info)| {
+                    .map(|(_, info, _)| {
                         format!(
                             "\n{}: <https://steamcommunity.com/sharedfiles/filedetails/?id={}>",
                             info.name, info.id
@@ -52,7 +52,7 @@ pub async fn list_items(ctx: Context<'_>) -> Result<(), Error> {
     } else {
         let items = subscriptions
             .iter()
-            .map(|(_, info)| {
+            .map(|(_, info, _)| {
                 format!(
                     "\n{}: <https://steamcommunity.com/sharedfiles/filedetails/?id={}>",
                     info.name, info.id

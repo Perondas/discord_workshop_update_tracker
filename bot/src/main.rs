@@ -14,6 +14,7 @@ use crate::commands::{
     actions::{
         add::item_add,
         list::list_items,
+        notes::edit_note,
         remove::{item_remove, remove_all},
         restart::restart,
     },
@@ -22,6 +23,7 @@ use crate::commands::{
 
 mod commands;
 mod db;
+mod printer;
 mod scheduler;
 mod steam;
 
@@ -71,6 +73,7 @@ async fn main() {
             get_info(),
             collection_add(),
             remove_all(),
+            edit_note(),
         ],
         on_error: |error| Box::pin(on_error(error)),
         pre_command: |ctx| {

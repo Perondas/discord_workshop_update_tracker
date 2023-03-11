@@ -1,4 +1,5 @@
 use mysql::{params, prelude::Queryable, Pool};
+use sql_lexer::sanitize_string;
 
 use crate::Error;
 
@@ -7,26 +8,29 @@ use super::ItemInfo;
 pub fn get_all_subscriptions_of_guild(
     pool: &Pool,
     guild_id: u64,
-) -> Result<Vec<(u64, ItemInfo)>, Error> {
+) -> Result<Vec<(u64, ItemInfo, Option<String>)>, Error> {
     let mut conn = pool.get_conn()?;
 
-    let res: Vec<(u64, u64, String, u64, Option<String>)> = conn.query(format!(
-        "SELECT Subscriptions.LastUpdate, Items.ItemId,  Items.ItemName, Items.LastUpdate, Items.PreviewUrl FROM Subscriptions INNER JOIN Items ON Subscriptions.ItemId = Items.ItemId WHERE Subscriptions.ServerId = {}",
+    let res: Vec<(u64, u64, String, u64, Option<String>, Option<String>)> = conn.query(format!(
+        "SELECT Subscriptions.LastUpdate, Items.ItemId,  Items.ItemName, Items.LastUpdate, Items.PreviewUrl, Subscriptions.Note FROM Subscriptions INNER JOIN Items ON Subscriptions.ItemId = Items.ItemId WHERE Subscriptions.ServerId = {}",
         guild_id
     ))?;
 
     res.iter()
-        .map(|(last_notified, id, name, last_updated, preview_url)| {
-            Ok((
-                *last_notified,
-                ItemInfo {
-                    id: *id,
-                    name: name.clone(),
-                    last_updated: *last_updated,
-                    preview_url: preview_url.clone(),
-                },
-            ))
-        })
+        .map(
+            |(last_notified, id, name, last_updated, preview_url, note)| {
+                Ok((
+                    *last_notified,
+                    ItemInfo {
+                        id: *id,
+                        name: name.clone(),
+                        last_updated: *last_updated,
+                        preview_url: preview_url.clone(),
+                    },
+                    note.clone(),
+                ))
+            },
+        )
         .collect()
 }
 
@@ -87,6 +91,39 @@ pub fn remove_all_subscriptions(pool: &Pool, guild_id: u64) -> Result<(), Error>
         r"DELETE FROM Subscriptions WHERE ServerId = :guild_id;",
         params! {
             "guild_id" => guild_id,
+        },
+    )?;
+    Ok(())
+}
+
+pub fn get_note(pool: &Pool, guild_id: u64, item_id: u64) -> Result<Option<String>, Error> {
+    let mut conn = pool.get_conn()?;
+
+    let res: Option<Option<String>> = conn.query_first(format!(
+        "SELECT Note FROM Subscriptions WHERE ServerId = {} AND ItemId = {}",
+        guild_id, item_id
+    ))?;
+
+    match res {
+        Some(note) => Ok(note),
+        None => Err("Not subscribed".into()),
+    }
+}
+
+pub fn update_subscription_note(
+    pool: &Pool,
+    guild_id: u64,
+    item_id: u64,
+    note: Option<String>,
+) -> Result<(), Error> {
+    let mut conn = pool.get_conn()?;
+
+    conn.exec_drop(
+        r"UPDATE Subscriptions SET Note = :note WHERE ServerId = :guild_id AND ItemId = :item_id;",
+        params! {
+            "note" => note.map(|s| sanitize_string(s)),
+            "guild_id" => guild_id,
+            "item_id" => item_id,
         },
     )?;
     Ok(())
