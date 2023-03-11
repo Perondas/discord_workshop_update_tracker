@@ -1,38 +1,29 @@
-use crate::{db, Context, Error};
+use crate::{
+    commands::common::{get_guild, ok_or_respond},
+    db, Context, Error,
+};
 
 /// Restarts your tracking job, immediately checking for any updates
 #[poise::command(track_edits, slash_command, rename = "restart")]
 pub async fn restart(ctx: Context<'_>) -> Result<(), Error> {
-    let guild = match ctx.guild() {
-        Some(guild) => guild,
-        None => {
-            ctx.say("This command can only be used in a guild.").await?;
-            return Ok(());
-        }
-    };
+    let guild = get_guild!(ctx);
 
-    let schedule = match db::servers::get_schedule(&ctx.data().pool, guild.id.0) {
-        Ok(schedule) => schedule,
-        Err(_) => {
-            ctx.say("An error occurred while fetching the schedule.")
-                .await?;
-            return Ok(());
-        }
-    };
+    let schedule = ok_or_respond!(
+        ctx,
+        db::servers::get_schedule(&ctx.data().pool, guild.id.0),
+        "An error occurred while fetching the schedule."
+    );
 
     if schedule.is_none() {
         ctx.say("Please set a schedule first.").await?;
         return Ok(());
     }
 
-    match ctx.data().scheduler.start_schedule(guild.id.0).await {
-        Ok(_) => (),
-        Err(_) => {
-            ctx.say("An error occurred while restarting the tracking job.")
-                .await?;
-            return Ok(());
-        }
-    }
+    ok_or_respond!(
+        ctx,
+        ctx.data().scheduler.start_schedule(guild.id.0).await,
+        "An error occurred while restarting the tracking job."
+    );
 
     ctx.say("Restarted tracking job.").await?;
     Ok(())

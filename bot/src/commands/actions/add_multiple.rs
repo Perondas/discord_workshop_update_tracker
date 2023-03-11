@@ -1,4 +1,9 @@
-use crate::{commands::actions::get_guild_channel, db, steam::get_item, Context, Error};
+use crate::{
+    commands::common::{get_channel, get_guild, get_guild_channel},
+    db,
+    steam::get_item,
+    Context, Error,
+};
 
 /// Add multiple items to the tracked items
 #[poise::command(track_edits, slash_command, rename = "add_multiple")]
@@ -26,40 +31,13 @@ pub async fn item_batch_add(
         return Ok(());
     }
 
-    let guild = match ctx.guild() {
-        Some(g) => g,
-        None => {
-            ctx.say("This command can only be used in a guild.").await?;
-            return Ok(());
-        }
-    };
+    let guild = get_guild!(ctx);
 
-    let item_channel = match db::servers::get_update_channel(&ctx.data().pool, guild.id.0) {
-        Ok(c) => c,
-        Err(_) => {
-            ctx.say("An error occurred while fetching the update channel.")
-                .await?;
-            return Ok(());
-        }
-    };
+    let item_channel = get_channel!(ctx, guild.id.0);
 
-    let item_channel = match item_channel {
-        Some(c) => c,
-        None => {
-            ctx.say("Please set an update channel first.").await?;
-            return Ok(());
-        }
-    };
+    let g = get_guild_channel!(ctx, guild, item_channel);
 
     ctx.say("Success").await?;
-
-    let g = match get_guild_channel(&guild, item_channel) {
-        Some(g) => g,
-        None => {
-            ctx.say("The update channel is no longer available").await?;
-            return Ok(());
-        }
-    };
 
     for item_id in item_ids {
         let item_info = match get_item(&ctx.data().pool, item_id).await {

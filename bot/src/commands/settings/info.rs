@@ -1,36 +1,29 @@
-use crate::{db, Context, Error};
+use crate::{
+    commands::common::{get_guild, ok_or_respond},
+    db, Context, Error,
+};
 
 /// Get info about your bot
 #[poise::command(track_edits, slash_command, rename = "info")]
 pub async fn get_info(ctx: Context<'_>) -> Result<(), Error> {
-    let guild = match ctx.guild() {
-        Some(guild) => guild,
-        None => {
-            ctx.say("This command can only be used in a guild.").await?;
-            return Ok(());
-        }
-    };
+    let guild = get_guild!(ctx);
 
-    let count = match db::subscriptions::count_guild_subscriptions(&ctx.data().pool, guild.id.0) {
-        Ok(count) => count,
-        Err(_) => {
-            ctx.say("An error occurred while fetching the subscriptions.")
-                .await?;
-            return Ok(());
-        }
-    };
+    let count = ok_or_respond!(
+        ctx,
+        db::subscriptions::count_guild_subscriptions(&ctx.data().pool, guild.id.0),
+        "An error occurred while fetching the subscriptions."
+    );
 
     let is_running = ctx.data().scheduler.is_running(guild.id.0);
 
-    let last_update = match db::servers::get_last_update(&ctx.data().pool, guild.id.0) {
-        Ok(last_update) => last_update,
-        Err(_) => {
-            ctx.say("An error occurred while fetching the last update.")
-                .await?;
-            return Ok(());
-        }
-    };
+    let last_update = ok_or_respond!(
+        ctx,
+        db::servers::get_last_update(&ctx.data().pool, guild.id.0),
+        "An error occurred while fetching the last update."
+    );
+
     let mut msg = String::new();
+
     msg.push_str(&format!("Your server is subscribed to {count} mods\n"));
     let status = if is_running { "running" } else { "not running" };
     let time = match last_update {
