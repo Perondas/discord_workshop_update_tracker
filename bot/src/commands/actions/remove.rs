@@ -1,7 +1,7 @@
 use crate::{commands::actions::get_guild_channel, db, steam::get_item, Context, Error};
 
 /// Remove a item from the tracked items
-#[poise::command(track_edits, slash_command)]
+#[poise::command(track_edits, slash_command, rename = "remove")]
 pub async fn item_remove(
     ctx: Context<'_>,
     #[description = "The id of the item to be removed"] item_id: u64,

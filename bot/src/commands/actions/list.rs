@@ -3,7 +3,7 @@ use itertools::Itertools;
 use crate::{db, Context, Error};
 
 /// List all the currently subscribed items
-#[poise::command(track_edits, slash_command)]
+#[poise::command(track_edits, slash_command, rename = "list")]
 pub async fn list_items(ctx: Context<'_>) -> Result<(), Error> {
     let guild = match ctx.guild() {
         Some(guild) => guild,

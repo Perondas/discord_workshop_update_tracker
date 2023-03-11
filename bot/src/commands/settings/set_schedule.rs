@@ -1,7 +1,7 @@
 use crate::{db, Context, Error};
 
 /// Set how often the bot should look for updates
-#[poise::command(track_edits, slash_command)]
+#[poise::command(track_edits, slash_command, rename = "set_schedule")]
 pub async fn set_schedule(
     ctx: Context<'_>,
     #[description = "Updates will bec checked every x hours"] interval: u64,

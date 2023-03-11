@@ -1,7 +1,7 @@
 use crate::{commands::actions::get_guild_channel, db, steam::get_item, Context, Error};
 
 /// Add multiple items to the tracked items
-#[poise::command(track_edits, slash_command)]
+#[poise::command(track_edits, slash_command, rename = "add_multiple")]
 pub async fn item_batch_add(
     ctx: Context<'_>,
     #[description = "The id of the item to be tracked. Separated by a comma(,)"] item_ids: String,

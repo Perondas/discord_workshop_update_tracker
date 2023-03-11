@@ -1,7 +1,7 @@
 use crate::{db, Context, Error};
 
 /// Restarts your tracking job, immediately checking for any updates
-#[poise::command(track_edits, slash_command)]
+#[poise::command(track_edits, slash_command, rename = "restart")]
 pub async fn restart(ctx: Context<'_>) -> Result<(), Error> {
     let guild = match ctx.guild() {
         Some(guild) => guild,

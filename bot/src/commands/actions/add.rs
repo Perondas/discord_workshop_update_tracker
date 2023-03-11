@@ -1,7 +1,7 @@
 use crate::{commands::actions::get_guild_channel, db, steam::get_item, Context, Error};
 
 /// Add a item to the tracked items
-#[poise::command(track_edits, slash_command)]
+#[poise::command(track_edits, slash_command, rename = "add")]
 pub async fn item_add(
     ctx: Context<'_>,
     #[description = "The id of the item to be tracked"] item_id: u64,

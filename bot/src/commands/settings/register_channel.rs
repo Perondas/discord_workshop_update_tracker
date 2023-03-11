@@ -1,7 +1,7 @@
 use crate::{db, Context, Error};
 
-/// Set the channel where the bot will send updates
-#[poise::command(track_edits, slash_command)]
+/// Set the channel where the bot will send updates to
+#[poise::command(track_edits, slash_command, rename = "register_channel")]
 pub async fn register_channel(
     ctx: Context<'_>,
     #[description = "Channel Id for update broadcast"] channel_id: Option<u64>,
