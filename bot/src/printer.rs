@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time};
 
 use itertools::Itertools;
 use poise::serenity_prelude::{CacheAndHttp, GuildId};
@@ -25,6 +25,15 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
     let mut failed = Vec::new();
 
     for (last_notify, item_info, note) in subscriptions {
+        // Only notify once per hour
+        if last_notify + 60 * 60
+            > time::SystemTime::now()
+                .duration_since(time::UNIX_EPOCH)?
+                .as_secs()
+        {
+            continue;
+        }
+
         let item_info = steam::get_item(&scheduler.pool, item_info.id).await?;
 
         if item_info.last_updated > last_notify {
