@@ -19,7 +19,7 @@ pub async fn autocomplete_name(
     let res = vec![];
 
     let to_choice = |(s, id): (String, u64)| poise::AutocompleteChoice {
-        name: s.clone(),
+        name: s,
         value: id.to_string(),
     };
 
@@ -49,6 +49,7 @@ pub async fn autocomplete_name(
 
 #[derive(Clone)]
 struct NameCache {
+    #[allow(clippy::type_complexity)]
     names: Arc<DashMap<(u64, String), (Vec<(String, u64)>, time::Instant)>>,
 }
 

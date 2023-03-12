@@ -3,8 +3,7 @@ use poise::serenity_prelude::ButtonStyle;
 
 use crate::{
     commands::common::{get_by_name, get_channel, get_guild, get_guild_channel, ok_or_respond},
-    db::{self, items::get_item_by_name},
-    steam::get_item,
+    db::{self},
     Context, Error,
 };
 

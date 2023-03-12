@@ -6,9 +6,7 @@ use crate::{
         autocomplete::autocomplete_name,
         common::{get_by_name, get_guild, ok_or_respond},
     },
-    db,
-    steam::get_item,
-    AppState, Error,
+    db, AppState, Error,
 };
 
 #[derive(Debug, Modal)]
