@@ -119,6 +119,17 @@ pub fn update_subscription_note(
 ) -> Result<(), Error> {
     let mut conn = pool.get_conn()?;
 
+    if note.is_none() || note.as_ref().unwrap().is_empty() {
+        conn.exec_drop(
+            r"UPDATE Subscriptions SET Note = NULL WHERE ServerId = :guild_id AND ItemId = :item_id;",
+            params! {
+                "guild_id" => guild_id,
+                "item_id" => item_id,
+            },
+        )?;
+        return Ok(());
+    }
+
     conn.exec_drop(
         r"UPDATE Subscriptions SET Note = :note WHERE ServerId = :guild_id AND ItemId = :item_id;",
         params! {
