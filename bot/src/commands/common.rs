@@ -56,6 +56,28 @@ macro_rules! ok_or_respond {
     };
 }
 
+macro_rules! get_by_name {
+    ($ctx:expr, $item:expr) => {
+        match $item.parse() {
+            Ok(v) => {
+                ok_or_respond!(
+                    $ctx,
+                    crate::steam::get_item(&$ctx.data().pool, v).await,
+                    "Could not find the item."
+                )
+            }
+            Err(_) => {
+                ok_or_respond!(
+                    $ctx,
+                    crate::db::items::get_item_by_name(&$ctx.data().pool, &$item),
+                    "Could not find the item by that name."
+                )
+            }
+        }
+    };
+}
+
+pub(crate) use get_by_name;
 pub(crate) use get_channel;
 pub(crate) use get_guild;
 pub(crate) use get_guild_channel;

@@ -2,7 +2,10 @@ use poise::Modal;
 type ApplicationContext<'a> = poise::ApplicationContext<'a, AppState, Error>;
 
 use crate::{
-    commands::common::{get_guild, ok_or_respond},
+    commands::{
+        autocomplete::autocomplete_name,
+        common::{get_by_name, get_guild, ok_or_respond},
+    },
     db,
     steam::get_item,
     AppState, Error,
@@ -26,19 +29,17 @@ impl NoteModal {
 #[poise::command(slash_command, rename = "edit_note")]
 pub async fn edit_note(
     ctx: ApplicationContext<'_>,
-    #[description = "The id or the name of the item"] item_id: u64,
+    #[autocomplete = "autocomplete_name"]
+    #[description = "The id or the name of the item"]
+    item: String,
 ) -> Result<(), Error> {
     let guild = get_guild!(ctx);
 
-    let item_info = ok_or_respond!(
-        ctx,
-        get_item(&ctx.data().pool, item_id).await,
-        "An error occurred while fetching the item."
-    );
+    let item_info = get_by_name!(ctx, item);
 
     let note = ok_or_respond!(
         ctx,
-        db::subscriptions::get_note(&ctx.data().pool, guild.id.0, item_id),
+        db::subscriptions::get_note(&ctx.data().pool, guild.id.0, item_info.id),
         "An error occurred while fetching the subscription."
     );
 

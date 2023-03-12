@@ -1,8 +1,9 @@
+use crate::commands::autocomplete::autocomplete_name;
 use poise::serenity_prelude::ButtonStyle;
 
 use crate::{
-    commands::common::{get_channel, get_guild, get_guild_channel, ok_or_respond},
-    db,
+    commands::common::{get_by_name, get_channel, get_guild, get_guild_channel, ok_or_respond},
+    db::{self, items::get_item_by_name},
     steam::get_item,
     Context, Error,
 };
@@ -11,21 +12,19 @@ use crate::{
 #[poise::command(slash_command, rename = "remove")]
 pub async fn item_remove(
     ctx: Context<'_>,
-    #[description = "The id of the item to be removed"] item_id: u64,
+    #[autocomplete = "autocomplete_name"]
+    #[description = "The id of name of item to be removed"]
+    item: String,
 ) -> Result<(), Error> {
     let guild = get_guild!(ctx);
 
     let item_channel = get_channel!(ctx, guild.id.0);
 
-    let item_info = ok_or_respond!(
-        ctx,
-        get_item(&ctx.data().pool, item_id).await,
-        "An error occurred while fetching the item."
-    );
+    let item_info = get_by_name!(ctx, item);
 
     ok_or_respond!(
         ctx,
-        db::subscriptions::remove_subscription(&ctx.data().pool, guild.id.0, item_id),
+        db::subscriptions::remove_subscription(&ctx.data().pool, guild.id.0, item_info.id),
         "An error occurred while removing the item."
     );
 
@@ -41,7 +40,7 @@ pub async fn item_remove(
             e.title(item_info.name);
             e.url(format!(
                 "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                item_id
+                item_info.id
             ));
             if let Some(preview_url) = item_info.preview_url {
                 e.image(preview_url);

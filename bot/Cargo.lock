@@ -201,6 +201,7 @@ dependencies = [
  "lazy_static",
  "mysql",
  "poise",
+ "regex",
  "reqwest",
  "sql_lexer",
  "tokio",
