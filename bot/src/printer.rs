@@ -144,7 +144,10 @@ pub async fn send_in_chunks_updates(
                     }
 
                     if let Some(note) = note {
-                        e.field("Note:", note, false);
+                        e.footer(|f| {
+                            f.text(format!("Note: {}", note));
+                            f
+                        });
                     }
 
                     e
@@ -179,7 +182,10 @@ pub async fn send_in_one_updates(
                 }
 
                 if let Some(note) = note {
-                    e.field("Note:", note, false);
+                    e.footer(|f| {
+                        f.text(format!("Note: {}", note));
+                        f
+                    });
                 }
 
                 e

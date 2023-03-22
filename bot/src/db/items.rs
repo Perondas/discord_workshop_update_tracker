@@ -32,7 +32,8 @@ pub fn add_item(pool: &Pool, info: ItemInfo) -> Result<(), Error> {
             "id" => info.id,
             "name" => sanitize_string(info.name),
             "last_update" => info.last_updated,
-            "preview_url" => info.preview_url.map(sanitize_string),
+            // We don't sanitize the preview url because it is already sanitized by steam
+            "preview_url" => info.preview_url,
         },
     );
 
@@ -54,7 +55,8 @@ pub fn update_item(pool: &Pool, info: ItemInfo) -> Result<(), Error> {
             "id" => info.id,
             "name" => sanitize_string(info.name),
             "last_update" => info.last_updated,
-            "preview_url" => info.preview_url.map(sanitize_string),
+            // We don't sanitize the preview url because it is already sanitized by steam
+            "preview_url" => info.preview_url,
         },
     );
 

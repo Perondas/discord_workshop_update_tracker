@@ -1,5 +1,6 @@
 use mysql::{params, prelude::Queryable, Pool};
 use sql_lexer::sanitize_string;
+use tracing::error;
 
 use crate::Error;
 

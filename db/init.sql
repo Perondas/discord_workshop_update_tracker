@@ -23,7 +23,7 @@ COLLATE=utf8mb4_0900_ai_ci;
 CREATE TABLE Subscriptions (
 	ServerId BIGINT NOT NULL,
 	ItemId BIGINT NOT NULL,
-	LastUpdate BIGINT NULL,
+	LastUpdate BIGINT NOT NULL,
 	Note varchar(500) NULL,
 	CONSTRAINT Subscriptions_PK PRIMARY KEY (ServerId,ItemId),
 	CONSTRAINT Subscriptions_FK FOREIGN KEY (ItemId) REFERENCES Items(ItemId) ON DELETE CASCADE ON UPDATE CASCADE,
