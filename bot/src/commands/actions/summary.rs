@@ -7,7 +7,7 @@ use crate::{
 };
 
 /// List all changes since a specified date
-#[poise::command(slash_command, rename = "peter")]
+#[poise::command(slash_command, rename = "changes_since")]
 pub async fn changes_since(
     ctx: Context<'_>,
     #[description = "The since. Format: mm/dd/yy"] time_str: String,
