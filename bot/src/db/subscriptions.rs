@@ -140,3 +140,32 @@ pub fn update_subscription_note(
     )?;
     Ok(())
 }
+
+pub async fn get_changes_since(
+    pool: &Pool,
+    guild_id: u64,
+    since: u64,
+) -> Result<Vec<(ItemInfo, Option<String>)>, Error> {
+    let mut conn = pool.get_conn()?;
+
+    let res: Vec<(u64, String, u64, Option<String>, Option<String>)> = conn.query(format!(
+        "SELECT Items.ItemId, Items.ItemName, Items.LastUpdate, Items.PreviewUrl, Subscriptions.Note FROM Subscriptions INNER JOIN Items ON Subscriptions.ItemId = Items.ItemId WHERE Subscriptions.ServerId = {} AND Subscriptions.LastUpdate > {}",
+        guild_id,
+        since
+    ))?;
+
+    Ok(res
+        .iter()
+        .map(|(id, name, last_updated, preview_url, note)| {
+            (
+                ItemInfo {
+                    id: *id,
+                    name: name.clone(),
+                    last_updated: *last_updated,
+                    preview_url: preview_url.clone(),
+                },
+                note.clone(),
+            )
+        })
+        .collect())
+}

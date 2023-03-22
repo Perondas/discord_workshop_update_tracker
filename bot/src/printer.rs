@@ -1,7 +1,7 @@
-use std::{sync::Arc, time};
+use std::time;
 
 use itertools::Itertools;
-use poise::serenity_prelude::{CacheAndHttp, GuildId};
+use poise::serenity_prelude::{CacheHttp, GuildId};
 use tracing::{info, warn};
 
 use crate::{db, scheduler::Scheduler, steam, Error};
@@ -37,7 +37,7 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
         let item_info = steam::get_item(&scheduler.pool, item_info.id).await?;
 
         if item_info.last_updated > last_notify {
-            updated.push((item_info, last_notify, note));
+            updated.push((item_info, note));
         } else {
             unknown.push((last_notify, item_info, note));
         }
@@ -46,7 +46,7 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
     for (last_notify, item_info, note) in unknown {
         if let Ok(info) = steam::get_latest_item(&scheduler.pool, item_info.id).await {
             if info.last_updated > last_notify {
-                updated.push((info, last_notify, note));
+                updated.push((info, note));
             }
         } else {
             failed.push((last_notify, item_info));
@@ -82,7 +82,7 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
             send_in_one_updates(c, client, &updated).await?;
         }
 
-        for (item_info, _, _) in updated {
+        for (item_info, _) in updated {
             db::subscriptions::update_last_notify(&scheduler.pool, guild_id, item_info.id)?;
         }
     }
@@ -110,16 +110,16 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
     Ok(())
 }
 
-async fn send_in_chunks_updates(
+pub async fn send_in_chunks_updates(
     c: &poise::serenity_prelude::GuildChannel,
-    client: &CacheAndHttp,
-    updated: &[(db::ItemInfo, u64, Option<String>)],
+    client: impl CacheHttp,
+    updated: &[(db::ItemInfo, Option<String>)],
 ) -> Result<(), Error> {
     let chunks: Vec<Vec<(db::ItemInfo, Option<String>)>> = updated
         .iter()
         .chunks(5)
         .into_iter()
-        .map(|c| c.map(|(m, _, n)| (m.clone(), n.clone())).collect())
+        .map(|c| c.map(|(m, n)| (m.clone(), n.clone())).collect())
         .collect();
 
     let parts = chunks.len();
@@ -159,15 +159,15 @@ async fn send_in_chunks_updates(
     Ok(())
 }
 
-async fn send_in_one_updates(
+pub async fn send_in_one_updates(
     c: &poise::serenity_prelude::GuildChannel,
-    client: &Arc<CacheAndHttp>,
-    updated: &[(db::ItemInfo, u64, Option<String>)],
+    client: impl CacheHttp,
+    updated: &[(db::ItemInfo, Option<String>)],
 ) -> Result<(), Error> {
     c.send_message(&client, |d| {
         d.content("The following Items have been updated:".to_string());
 
-        for (item_info, _, note) in updated.iter() {
+        for (item_info, note) in updated.iter() {
             d.add_embed(|e| {
                 e.title(item_info.name.clone());
                 e.url(format!(

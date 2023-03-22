@@ -4,6 +4,7 @@
         "builtins",
         "curr",
         "dashmap",
+        "dateparser",
         "dotenv",
         "itemcount",
         "itertools",

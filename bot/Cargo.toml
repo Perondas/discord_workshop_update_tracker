@@ -1,12 +1,13 @@
 [package]
 name = "bot"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 dashmap = "5.4.0"
+dateparser = "0.1.8"
 dotenv = "0.15.0"
 itertools = "0.10.5"
 json = "0.12.4"

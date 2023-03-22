@@ -17,6 +17,7 @@ This is a simple bot that will periodically check if a steam workshop item has b
 * /info - Show information about the bot
 * /restart - Restart the tracking job for your server
 * /edit_note - Edit the note for a specific item
+* /changes_since - Show updates since a specific date
 
 All the commands are purely slash commands.
 They can also all be configured to be used by a specific role only.

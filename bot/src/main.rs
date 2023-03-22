@@ -17,6 +17,7 @@ use crate::commands::{
         notes::edit_note,
         remove::{item_remove, remove_all},
         restart::restart,
+        summary::changes_since,
     },
     settings::{info::get_info, register_channel::*, set_schedule::*},
 };
@@ -74,6 +75,7 @@ async fn main() {
             collection_add(),
             remove_all(),
             edit_note(),
+            changes_since(),
         ],
         on_error: |error| Box::pin(on_error(error)),
         pre_command: |ctx| {

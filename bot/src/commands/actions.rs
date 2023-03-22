@@ -6,6 +6,7 @@ pub mod list;
 pub mod notes;
 pub mod remove;
 pub mod restart;
+pub mod summary;
 
 pub fn get_guild_channel(g: &Guild, channel_id: u64) -> Option<GuildChannel> {
     g.channels
