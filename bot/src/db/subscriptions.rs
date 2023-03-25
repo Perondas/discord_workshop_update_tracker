@@ -17,18 +17,18 @@ pub fn get_all_subscriptions_of_guild(
         guild_id
     ))?;
 
-    res.iter()
+    res.into_iter()
         .map(
             |(last_notified, id, name, last_updated, preview_url, note)| {
                 Ok((
-                    *last_notified,
+                    last_notified,
                     ItemInfo {
-                        id: *id,
-                        name: name.clone(),
-                        last_updated: *last_updated,
-                        preview_url: preview_url.clone(),
+                        id,
+                        name,
+                        last_updated,
+                        preview_url,
                     },
-                    note.clone(),
+                    note,
                 ))
             },
         )
@@ -155,16 +155,16 @@ pub async fn get_changes_since(
     ))?;
 
     Ok(res
-        .iter()
+        .into_iter()
         .map(|(id, name, last_updated, preview_url, note)| {
             (
                 ItemInfo {
-                    id: *id,
-                    name: name.clone(),
-                    last_updated: *last_updated,
-                    preview_url: preview_url.clone(),
+                    id,
+                    name,
+                    last_updated,
+                    preview_url,
                 },
-                note.clone(),
+                note,
             )
         })
         .collect())

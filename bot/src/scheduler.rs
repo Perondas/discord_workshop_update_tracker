@@ -32,7 +32,7 @@ impl Scheduler {
     }
 
     pub async fn start_cron(&self, client: Arc<CacheAndHttp>) -> Result<(), Error> {
-        *self.client.write().await = Some(client.clone());
+        *self.client.write().await = Some(client);
 
         let schedules = db::servers::get_all_schedules(&self.pool)?;
         let count = schedules.len();

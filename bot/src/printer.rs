@@ -93,7 +93,7 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
 
             for (_, item_info) in failed.iter() {
                 d.add_embed(|e| {
-                    e.title(format!("{}, Id: {}", item_info.name.clone(), item_info.id));
+                    e.title(format!("{}, Id: {}", item_info.name, item_info.id));
                     e.url(format!(
                         "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
                         item_info.id
@@ -134,12 +134,12 @@ pub async fn send_in_chunks_updates(
 
             for (item_info, note) in chunk.iter() {
                 d.add_embed(|e| {
-                    e.title(item_info.name.clone());
+                    e.title(&item_info.name);
                     e.url(format!(
                         "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
                         item_info.id
                     ));
-                    if let Some(url) = item_info.preview_url.clone() {
+                    if let Some(url) = &item_info.preview_url {
                         e.image(url);
                     }
 
@@ -172,12 +172,12 @@ pub async fn send_in_one_updates(
 
         for (item_info, note) in updated.iter() {
             d.add_embed(|e| {
-                e.title(item_info.name.clone());
+                e.title(&item_info.name);
                 e.url(format!(
                     "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
                     item_info.id
                 ));
-                if let Some(url) = item_info.preview_url.clone() {
+                if let Some(url) = item_info.preview_url.as_ref() {
                     e.image(url);
                 }
 
