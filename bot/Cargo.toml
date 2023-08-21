@@ -6,20 +6,18 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dashmap = "5.4.0"
-dateparser = "0.1.8"
+dashmap = "5.5.0"
+dateparser = "0.2.0"
 dotenv = "0.15.0"
-itertools = "0.10.5"
+itertools = "0.11.0"
 json = "0.12.4"
 lazy_static = "1.4.0"
-mysql = "23.0.1"
-poise = "0.5.2"
-regex = "1.7.1"
-reqwest = { version = "0.11.13", features = ["default", "json"] }
-sql_lexer = "0.9.4"
-tokio = {version = "1.24.1", features = ["full"] }
+mysql = "24.0.0"
+poise = "0.5.5"
+regex = "1.9.3"
+reqwest = { version = "0.11.18", features = ["default", "json"] }
+sql_lexer = "0.9.5"
+tokio = {version = "1.32.0", features = ["full"] }
 tracing = "0.1.37"
-tracing-subscriber = "0.3.16"
+tracing-subscriber = "0.3.17"
 
-[registries.crates-io]
-protocol = "sparse"

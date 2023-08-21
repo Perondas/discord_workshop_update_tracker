@@ -21,6 +21,16 @@ pub async fn item_add(
         "An error occurred while fetching the item."
     );
 
+    if ok_or_respond!(
+        ctx,
+        db::subscriptions::check_subscription(&ctx.data().pool, guild.id.0, item_info.id),
+        "An error occurred while checking the item."
+    ) {
+        ctx.say("Item already tracked.").await?;
+
+        return Ok(());
+    }
+
     ok_or_respond!(
         ctx,
         db::subscriptions::add_subscription(&ctx.data().pool, guild.id.0, item_info.id),
@@ -55,5 +65,6 @@ pub async fn item_add(
     .await?;
 
     ctx.say("Success").await?;
+
     Ok(())
 }

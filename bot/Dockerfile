@@ -15,7 +15,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN cargo build --release --bin bot
 
-FROM debian AS runtime
+FROM debian:bullseye AS runtime
 RUN apt-get update
 RUN apt-get install ca-certificates -y
 

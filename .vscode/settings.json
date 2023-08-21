@@ -13,5 +13,8 @@
         "publishedfileids",
         "reqwest",
         "tokio"
+    ],
+    "rust-analyzer.linkedProjects": [
+        "./bot/Cargo.toml"
     ]
 }

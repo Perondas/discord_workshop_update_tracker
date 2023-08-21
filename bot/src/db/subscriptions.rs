@@ -35,6 +35,17 @@ pub fn get_all_subscriptions_of_guild(
         .collect()
 }
 
+pub fn check_subscription(pool: &Pool, guild_id: u64, item_id: u64) -> Result<bool, Error> {
+    let mut conn = pool.get_conn()?;
+
+    let res: Vec<(u64,)> = conn.query(format!(
+        "SELECT COUNT(*) FROM Subscriptions WHERE ServerId = {} AND ItemId = {}",
+        guild_id, item_id
+    ))?;
+
+    Ok(res[0].0 > 0)
+}
+
 pub fn add_subscription(pool: &Pool, guild_id: u64, item_id: u64) -> Result<(), Error> {
     let mut conn = pool.get_conn()?;
 
