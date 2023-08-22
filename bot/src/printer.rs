@@ -1,10 +1,14 @@
 use std::time;
 
 use itertools::Itertools;
-use poise::serenity_prelude::{CacheHttp, GuildId};
+use poise::serenity_prelude::{CacheHttp, CreateEmbed, GuildId};
 use tracing::{info, warn};
 
-use crate::{db, scheduler::Scheduler, steam, Error};
+use crate::{
+    db::{self, ItemInfo},
+    scheduler::Scheduler,
+    steam, Error,
+};
 
 pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<(), Error> {
     let client = scheduler.client.read().await;
@@ -34,7 +38,14 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
             continue;
         }
 
-        let item_info = steam::get_item(&scheduler.pool, item_info.id).await?;
+        let item_info = match steam::get_item(&scheduler.pool, item_info.id).await {
+            Ok(info) => info,
+            Err(e) => {
+                warn!("Failed to get item info: {}", e);
+                failed.push((last_notify, item_info, note));
+                continue;
+            }
+        };
 
         if item_info.last_updated > last_notify {
             updated.push((item_info, note));
@@ -49,7 +60,7 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
                 updated.push((info, note));
             }
         } else {
-            failed.push((last_notify, item_info));
+            failed.push((last_notify, item_info, note));
         }
     }
 
@@ -91,13 +102,9 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
         c.send_message(&client, |d| {
             d.content("The following Items could not be updated:".to_string());
 
-            for (_, item_info) in failed.iter() {
+            for (_, item_info, note) in failed.iter() {
                 d.add_embed(|e| {
-                    e.title(format!("{}, Id: {}", item_info.name, item_info.id));
-                    e.url(format!(
-                        "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                        item_info.id
-                    ));
+                    item_to_embed(e, item_info, note);
                     e
                 });
             }
@@ -134,22 +141,7 @@ pub async fn send_in_chunks_updates(
 
             for (item_info, note) in chunk.iter() {
                 d.add_embed(|e| {
-                    e.title(&item_info.name);
-                    e.url(format!(
-                        "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                        item_info.id
-                    ));
-                    if let Some(url) = &item_info.preview_url {
-                        e.image(url);
-                    }
-
-                    if let Some(note) = note {
-                        e.footer(|f| {
-                            f.text(format!("Note: {}", note));
-                            f
-                        });
-                    }
-
+                    item_to_embed(e, item_info, note);
                     e
                 });
             }
@@ -172,22 +164,7 @@ pub async fn send_in_one_updates(
 
         for (item_info, note) in updated.iter() {
             d.add_embed(|e| {
-                e.title(&item_info.name);
-                e.url(format!(
-                    "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
-                    item_info.id
-                ));
-                if let Some(url) = item_info.preview_url.as_ref() {
-                    e.image(url);
-                }
-
-                if let Some(note) = note {
-                    e.footer(|f| {
-                        f.text(format!("Note: {}", note));
-                        f
-                    });
-                }
-
+                item_to_embed(e, item_info, note);
                 e
             });
         }
@@ -196,4 +173,23 @@ pub async fn send_in_one_updates(
     })
     .await?;
     Ok(())
+}
+
+fn item_to_embed(e: &mut CreateEmbed, item_info: &ItemInfo, note: &Option<String>) {
+    e.title(&item_info.name);
+    e.url(format!(
+        "https://steamcommunity.com/sharedfiles/filedetails/?id={}",
+        item_info.id
+    ));
+
+    if let Some(url) = item_info.preview_url.as_ref() {
+        e.image(url);
+    }
+
+    if let Some(note) = note {
+        e.footer(|f| {
+            f.text(format!("Note: {}", note));
+            f
+        });
+    }
 }
