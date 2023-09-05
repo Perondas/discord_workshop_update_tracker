@@ -1,4 +1,4 @@
-FROM rust:latest AS chef
+FROM rust:bullseye AS chef
 
 RUN cargo install cargo-chef
 WORKDIR /bot
@@ -16,8 +16,6 @@ COPY . .
 RUN cargo build --release --bin bot
 
 FROM debian:bullseye AS runtime
-RUN apt-get update
-RUN apt-get install ca-certificates -y
 
 WORKDIR /bot
 
