@@ -42,7 +42,7 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
             Ok(info) => info,
             Err(e) => {
                 warn!("Failed to get item info: {}", e);
-                failed.push((last_notify, item_info, note));
+                failed.push((item_info, note));
                 continue;
             }
         };
@@ -60,7 +60,7 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
                 updated.push((info, note));
             }
         } else {
-            failed.push((last_notify, item_info, note));
+            failed.push((item_info, note));
         }
     }
 
@@ -88,9 +88,9 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
     } else {
         info!("Found {} updates for guild: {}", updated.len(), guild_id);
         if updated.len() > 5 {
-            send_in_chunks_updates(c, client, &updated).await?;
+            send_in_chunks("The following items were updated:", c, client, &updated).await?;
         } else {
-            send_in_one_updates(c, client, &updated).await?;
+            send_in_one("The following items were updated:", c, client, &updated).await?;
         }
 
         for (item_info, _) in updated {
@@ -99,25 +99,30 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
     }
 
     if !failed.is_empty() {
-        c.send_message(&client, |d| {
-            d.content("The following Items could not be updated:".to_string());
-
-            for (_, item_info, note) in failed.iter() {
-                d.add_embed(|e| {
-                    item_to_embed(e, item_info, note);
-                    e
-                });
-            }
-
-            d
-        })
-        .await?;
+        if failed.len() > 5 {
+            send_in_chunks(
+                "The following Items could not be updated:",
+                c,
+                client,
+                &failed,
+            )
+            .await?;
+        } else {
+            send_in_one(
+                "The following Items could not be updated:",
+                c,
+                client,
+                &failed,
+            )
+            .await?
+        }
     }
 
     Ok(())
 }
 
-pub async fn send_in_chunks_updates(
+pub async fn send_in_chunks(
+    msg: &str,
     c: &poise::serenity_prelude::GuildChannel,
     client: impl CacheHttp,
     updated: &[(db::ItemInfo, Option<String>)],
@@ -133,11 +138,7 @@ pub async fn send_in_chunks_updates(
 
     for (curr, chunk) in chunks.iter().enumerate() {
         c.send_message(&client, |d| {
-            d.content(format!(
-                "The following Items have been updated: Part {}/{}",
-                curr + 1,
-                parts
-            ));
+            d.content(format!("{}: Part {}/{}", msg, curr + 1, parts));
 
             for (item_info, note) in chunk.iter() {
                 d.add_embed(|e| {
@@ -154,13 +155,14 @@ pub async fn send_in_chunks_updates(
     Ok(())
 }
 
-pub async fn send_in_one_updates(
+pub async fn send_in_one(
+    msg: &str,
     c: &poise::serenity_prelude::GuildChannel,
     client: impl CacheHttp,
     updated: &[(db::ItemInfo, Option<String>)],
 ) -> Result<(), Error> {
     c.send_message(&client, |d| {
-        d.content("The following Items have been updated:".to_string());
+        d.content(msg);
 
         for (item_info, note) in updated.iter() {
             d.add_embed(|e| {
