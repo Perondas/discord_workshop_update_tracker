@@ -55,12 +55,16 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
     }
 
     for (last_notify, item_info, note) in unknown {
-        if let Ok(info) = steam::get_latest_item(&scheduler.pool, item_info.id).await {
-            if info.last_updated > last_notify {
-                updated.push((info, note));
+        match steam::get_latest_item(&scheduler.pool, item_info.id).await {
+            Ok(info) => {
+                if info.last_updated > last_notify {
+                    updated.push((info, note));
+                }
             }
-        } else {
-            failed.push((item_info, note));
+            Err(e) => {
+                warn!("Failed to get latest item info: {}", e);
+                failed.push((item_info, note));
+            }
         }
     }
 
