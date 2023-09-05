@@ -16,6 +16,7 @@ COPY . .
 RUN cargo build --release --bin bot
 
 FROM debian:bullseye AS runtime
+RUN apt-get install ca-certificates -y
 
 WORKDIR /bot
 
