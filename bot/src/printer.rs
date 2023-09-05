@@ -62,7 +62,7 @@ pub async fn notify_on_updates(scheduler: Scheduler, guild_id: u64) -> Result<()
                 }
             }
             Err(e) => {
-                warn!("Failed to get latest item info: {}", e);
+                warn!("Failed to get latest item: {}. Error: {}", item_info.id, e);
                 failed.push((item_info, note));
             }
         }
