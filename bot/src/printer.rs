@@ -138,7 +138,7 @@ pub async fn send_in_chunks(
 
     for (curr, chunk) in chunks.iter().enumerate() {
         c.send_message(&client, |d| {
-            d.content(format!("{}: Part {}/{}", msg, curr + 1, parts));
+            d.content(format!("{}\nPart {}/{}", msg, curr + 1, parts));
 
             for (item_info, note) in chunk.iter() {
                 d.add_embed(|e| {

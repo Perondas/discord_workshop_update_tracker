@@ -2,7 +2,7 @@ use std::time;
 
 use crate::{
     commands::common::*,
-    printer::{send_in_chunks_updates, send_in_one_updates},
+    printer::{send_in_chunks, send_in_one},
     Context, Error,
 };
 
@@ -52,10 +52,10 @@ pub async fn changes_since(
         ctx.say("No changes since then").await?;
     } else if changes.len() > 5 {
         ctx.say("Sending").await?;
-        send_in_chunks_updates(&g, &ctx, &changes).await?;
+        send_in_chunks("Changes since then:", &g, &ctx, &changes).await?;
     } else {
         ctx.say("Sending").await?;
-        send_in_one_updates(&g, &ctx, &changes).await?;
+        send_in_one("Changes since then:", &g, &ctx, &changes).await?;
     }
 
     Ok(())
